@@ -1,6 +1,7 @@
 package amigooculto;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 
 /**
@@ -9,47 +10,115 @@ import java.io.RandomAccessFile;
  */
 public class CRUD {
 
-    public final String diretório = "dados";
+    public final String diretorio = "dados";
 
     public RandomAccessFile arquivo;
-    public HashExtensivel índiceDireto;
-    public ArvoreBMais_String_Int índiceIndireto;
+    public HashExtensivel indiceDireto;
+    public ArvoreBMais_String_Int indiceIndireto;
 
     public CRUD(String nomeArquivo) throws Exception {
 
-        File d = new File(this.diretório);
+        File d = new File(this.diretorio);
         if (!d.exists()) {
             d.mkdir();
         }
 
-        arquivo = new RandomAccessFile(this.diretório + "/" + nomeArquivo + ".db", "rw");
+        arquivo = new RandomAccessFile(this.diretorio + "/" + nomeArquivo + ".db", "rw");
         if (arquivo.length() < 4) {
             arquivo.writeInt(0);  // cabeçalho do arquivo
         }
-        índiceDireto = new HashExtensivel(10,
-                this.diretório + "/diretorio." + nomeArquivo + ".idx",
-                this.diretório + "/cestos." + nomeArquivo + ".idx");
+        indiceDireto = new HashExtensivel(10,
+                this.diretorio + "/diretorio." + nomeArquivo + ".idx",
+                this.diretorio + "/cestos." + nomeArquivo + ".idx");
 
-        índiceIndireto = new ArvoreBMais_String_Int(10,
-                this.diretório + "/arvoreB." + nomeArquivo + ".idx");
+        indiceIndireto = new ArvoreBMais_String_Int(10,
+                this.diretorio + "/arvoreB." + nomeArquivo + ".idx");
     }
     
     //Métodos de utilização do CRUD
     
-    public int create(Usuario novoUsuario){
+    public int create(Usuario novoUsuario) throws IOException, Exception{
+        arquivo.seek(0);
+        int ultimoId = arquivo.readInt();
+        ultimoId++;
+        arquivo.seek(0);
+        arquivo.writeInt(ultimoId);
+        
+        novoUsuario.setIdUsuario(ultimoId);
+        long enderecoInsercao = arquivo.length();
+        arquivo.seek(enderecoInsercao);
+        arquivo.writeBoolean(true);
+        arquivo.writeInt(novoUsuario.toByteArray().length);
+        arquivo.write(novoUsuario.toByteArray());
+ 
+        indiceDireto.create(ultimoId, enderecoInsercao);
+        indiceIndireto.create(novoUsuario.chaveSecundaria(), ultimoId);
         
         return novoUsuario.getIdUsuario();
     }
     
-    public Usuario read(int idUsuario){
-        return null;
+    public Usuario readID(int idUsuario) throws Exception{
+        long endereco = indiceDireto.read(idUsuario);
+        //System.out.println("EnderecoREADID = " + endereco);
+        arquivo.seek(endereco);
+        boolean lapide = arquivo.readBoolean();
+        
+        if (!lapide){
+            return null;
+        }
+        
+        int tamanho = arquivo.readInt();
+        byte[] array = new byte[tamanho];
+        
+        arquivo.read(array);
+        Usuario usuario = new Usuario();
+        usuario.fromByteArray(array);
+        usuario.setIdUsuario(idUsuario);
+        
+        return usuario;
     }
     
-    public boolean update(Usuario usuario){
+    public Usuario readEmail(String email) throws IOException, Exception{
+        int id = indiceIndireto.read(email);
+        return readID(id);
+    }
+    
+    public boolean update(Usuario usuarioNovo) throws Exception{
+        Usuario usuarioAntigo = readID(usuarioNovo.getIdUsuario());
+        long endereco = indiceDireto.read(usuarioAntigo.getIdUsuario());
+        arquivo.seek(endereco+5);
+        int tamanhoAtual = usuarioNovo.toByteArray().length;
+        int tamanhoAnterior = usuarioAntigo.toByteArray().length;
+        
+        if (tamanhoAtual <= tamanhoAnterior){
+            arquivo.write(usuarioNovo.toByteArray());
+        } else {
+            arquivo.seek(endereco);
+            arquivo.writeBoolean(false);
+            long enderecoInsercao = arquivo.length();
+            arquivo.seek(enderecoInsercao);
+            byte[] array = usuarioNovo.toByteArray();
+            arquivo.writeBoolean(true);
+            arquivo.writeInt(array.length);
+            arquivo.write(array);
+            indiceDireto.update(usuarioNovo.getIdUsuario(), enderecoInsercao);
+        }
+        
+        if (!usuarioAntigo.chaveSecundaria().equals(usuarioNovo.chaveSecundaria())){
+            indiceIndireto.delete(usuarioAntigo.chaveSecundaria());
+            indiceIndireto.create(usuarioNovo.chaveSecundaria(), usuarioNovo.getIdUsuario());
+        }
+        
         return true;
     }
     
-    public boolean delete(int idUsuario){
+    public boolean delete(int idUsuario) throws Exception{
+        Usuario usuario = readID(idUsuario);
+        long enderecoDelecao = indiceDireto.read(idUsuario);
+        arquivo.seek(enderecoDelecao);
+        arquivo.writeBoolean(false);
+        indiceIndireto.delete(usuario.chaveSecundaria());
+        indiceDireto.delete(idUsuario);
         return true;
     }
 }

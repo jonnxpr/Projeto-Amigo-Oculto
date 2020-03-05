@@ -281,8 +281,8 @@ public class HashExtensivel {
         if (!d.exists())
             d.mkdir();
 
-        arqDiretório = new RandomAccessFile("dados/" + nomeArquivoDiretorio, "rw");
-        arqCestos = new RandomAccessFile("dados/" + nomeArquivoCestos, "rw");
+        arqDiretório = new RandomAccessFile(nomeArquivoDiretorio, "rw");
+        arqCestos = new RandomAccessFile(nomeArquivoCestos, "rw");
 
         // Se o diretório ou os cestos estiverem vazios, cria um novo diretório e lista
         // de cestos
