@@ -57,9 +57,14 @@ public class CRUD {
         return novoUsuario.getIdUsuario();
     }
     
-    public Usuario readID(int idUsuario) throws Exception{
+    public Usuario read(int idUsuario) throws Exception{
         long endereco = indiceDireto.read(idUsuario);
         //System.out.println("EnderecoREADID = " + endereco);
+        
+        if (endereco == -1){
+            return null;
+        }
+        
         arquivo.seek(endereco);
         boolean lapide = arquivo.readBoolean();
         
@@ -78,13 +83,13 @@ public class CRUD {
         return usuario;
     }
     
-    public Usuario readEmail(String email) throws IOException, Exception{
+    public Usuario read(String email) throws IOException, Exception{
         int id = indiceIndireto.read(email);
-        return readID(id);
+        return read(id);
     }
     
     public boolean update(Usuario usuarioNovo) throws Exception{
-        Usuario usuarioAntigo = readID(usuarioNovo.getIdUsuario());
+        Usuario usuarioAntigo = read(usuarioNovo.getIdUsuario());
         long endereco = indiceDireto.read(usuarioAntigo.getIdUsuario());
         arquivo.seek(endereco+5);
         int tamanhoAtual = usuarioNovo.toByteArray().length;
@@ -113,7 +118,7 @@ public class CRUD {
     }
     
     public boolean delete(int idUsuario) throws Exception{
-        Usuario usuario = readID(idUsuario);
+        Usuario usuario = read(idUsuario);
         long enderecoDelecao = indiceDireto.read(idUsuario);
         arquivo.seek(enderecoDelecao);
         arquivo.writeBoolean(false);

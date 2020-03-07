@@ -18,7 +18,7 @@ public class Usuario {
     private String apelido;
     private String email;
     private String senha;
-    private String codigoDeResgate;
+    private String codigoDeRecuperacao;
     
     
     public Usuario(){
@@ -27,7 +27,7 @@ public class Usuario {
         this.apelido = "";
         this.email = "";
         this.senha = "";
-        this.codigoDeResgate = "";
+        this.codigoDeRecuperacao = "";
     }
     
     public Usuario(String nome, String apelido, String email, String senha, String codigoDeResgate) {
@@ -36,7 +36,7 @@ public class Usuario {
         this.apelido = apelido;
         this.email = email;
         this.senha = senha;
-        this.codigoDeResgate = codigoDeResgate;
+        this.codigoDeRecuperacao = codigoDeResgate;
     }
     
     //Getter e Setter
@@ -81,12 +81,12 @@ public class Usuario {
         this.senha = senha;
     }
 
-    public String getCodigoDeResgate() {
-        return codigoDeResgate;
+    public String getCodigoDeRecuperacao() {
+        return codigoDeRecuperacao;
     }
 
-    public void setCodigoDeResgate(String codigoDeResgate) {
-        this.codigoDeResgate = codigoDeResgate;
+    public void setCodigoDeRecuperacao(String codigoDeRecuperacao) {
+        this.codigoDeRecuperacao = codigoDeRecuperacao;
     }
     
     //Métodos auxiliares
@@ -103,7 +103,7 @@ public class Usuario {
         saida.writeUTF(this.apelido);
         saida.writeUTF(this.email);
         saida.writeUTF(this.senha);
-        saida.writeUTF(this.codigoDeResgate);
+        saida.writeUTF(this.codigoDeRecuperacao);
         
         return dados.toByteArray();
     }
@@ -117,7 +117,7 @@ public class Usuario {
         this.apelido = entrada.readUTF();
         this.email = entrada.readUTF();
         this.senha = entrada.readUTF();
-        this.codigoDeResgate = entrada.readUTF();
+        this.codigoDeRecuperacao = entrada.readUTF();
     }
     
     @Override
@@ -126,7 +126,7 @@ public class Usuario {
         userString += "\nApelido: " + this.apelido;
         userString += "\nEmail: " + this.email;
         userString += "\nSenha: " + this.senha;
-        userString += "\nCódigo: " + this.codigoDeResgate;
+        userString += "\nCódigo: " + this.codigoDeRecuperacao;
         return userString;
     }
 }

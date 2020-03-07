@@ -1,5 +1,8 @@
 package amigooculto;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author Jonathan
@@ -11,7 +14,11 @@ public class AmigoOculto {
      */
     public static void main(String[] args) {
         Interface i = new Interface("AMIGO OCULTO", "1.0");
-        i.showMenuInicial();
+        try {
+            i.loopExec();
+        } catch (Exception ex) {
+            Logger.getLogger(AmigoOculto.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
 }
