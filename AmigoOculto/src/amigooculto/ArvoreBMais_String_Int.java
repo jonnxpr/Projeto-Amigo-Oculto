@@ -230,7 +230,7 @@ public class ArvoreBMais_String_Int {
         // Obs.: a comparação exata só será possível se considerarmos a menor string
         //       entre a chave e a string na página
         if(i<pa.n && pa.filhos[0]==-1 
-                  && chave.compareTo(pa.chaves[i].substring(0,Math.min(chave.length(),pa.chaves[i].length())))==0) {
+                  && chave.compareTo(pa.chaves[i])==0) {
             return pa.dados[i];
         }
         
@@ -914,6 +914,7 @@ public class ArvoreBMais_String_Int {
         }
     }
        
+    
     // Apaga o arquivo do índice, para que possa ser reconstruído
     public void apagar() throws IOException {
 
