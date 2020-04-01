@@ -1,7 +1,7 @@
-/*********
+/** *******
  * TABELA HASH EXTENSÍVEL
  * int chave, long dado
- * 
+ *
  * Os nomes dos métodos foram mantidos em inglês
  * apenas para manter a coerência com o resto da
  * disciplina:
@@ -9,11 +9,11 @@
  * - long read(int chave)
  * - boolean update(int chave, long dado)
  * - boolean delete(int chave)
- * 
+ *
  * Implementado pelo Prof. Marcos Kutova
  * v1.0 - 2019
  */
-package amigooculto;
+package amigooculto.indices;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,40 +23,42 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 
 public class HashExtensivel {
-   
-    String           nomeArquivoDiretorio;
-    String           nomeArquivoCestos;
+
+    String nomeArquivoDiretorio;
+    String nomeArquivoCestos;
     RandomAccessFile arqDiretorio;
     RandomAccessFile arqCestos;
-    int              quantidadeDadosPorCesto;
-    Diretório        diretório;
-    
+    int quantidadeDadosPorCesto;
+    Diretório diretório;
+
     class Cesto {
 
-        byte   profundidadeLocal;   // profundidade local do cesto
-        short  quantidade;          // quantidade de pares presentes no cesto
-        short  quantidadeMaxima;    // quantidade máxima de pares que o cesto pode conter
-        int[]  chaves;              // sequência de chaves armazenadas no cesto
+        byte profundidadeLocal;   // profundidade local do cesto
+        short quantidade;          // quantidade de pares presentes no cesto
+        short quantidadeMaxima;    // quantidade máxima de pares que o cesto pode conter
+        int[] chaves;              // sequência de chaves armazenadas no cesto
         long[] dados;               // sequência de dados correspondentes às chaves
-        short  bytesPorPar;         // size fixo de cada par de chave/dado em bytes
-        short  bytesPorCesto;       // size fixo do cesto em bytes
+        short bytesPorPar;         // size fixo de cada par de chave/dado em bytes
+        short bytesPorCesto;       // size fixo do cesto em bytes
 
         public Cesto(int qtdmax) throws Exception {
             this(qtdmax, 0);
         }
 
         public Cesto(int qtdmax, int pl) throws Exception {
-            if(qtdmax>32767)
+            if (qtdmax > 32767) {
                 throw new Exception("Quantidade máxima de 32.767 elementos");
-            if(pl>127)
+            }
+            if (pl > 127) {
                 throw new Exception("Profundidade local máxima de 127 bits");
-            profundidadeLocal = (byte)pl;
+            }
+            profundidadeLocal = (byte) pl;
             quantidade = 0;
-            quantidadeMaxima = (short)qtdmax;
+            quantidadeMaxima = (short) qtdmax;
             chaves = new int[quantidadeMaxima];
             dados = new long[quantidadeMaxima];
             bytesPorPar = 12;  // int + long
-            bytesPorCesto = (short)(bytesPorPar * quantidadeMaxima + 3);
+            bytesPorCesto = (short) (bytesPorPar * quantidadeMaxima + 3);
         }
 
         public byte[] toByteArray() throws IOException {
@@ -64,18 +66,18 @@ public class HashExtensivel {
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeByte(profundidadeLocal);
             dos.writeShort(quantidade);
-            int i=0;
-            while(i<quantidade) {
+            int i = 0;
+            while (i < quantidade) {
                 dos.writeInt(chaves[i]);
                 dos.writeLong(dados[i]);
                 i++;
             }
-            while(i<quantidadeMaxima) {
+            while (i < quantidadeMaxima) {
                 dos.writeInt(0);
                 dos.writeLong(0);
                 i++;
             }
-            return baos.toByteArray();            
+            return baos.toByteArray();
         }
 
         public void fromByteArray(byte[] ba) throws IOException {
@@ -83,8 +85,8 @@ public class HashExtensivel {
             DataInputStream dis = new DataInputStream(bais);
             profundidadeLocal = dis.readByte();
             quantidade = dis.readShort();
-            int i=0;
-            while(i<quantidadeMaxima) {
+            int i = 0;
+            while (i < quantidadeMaxima) {
                 chaves[i] = dis.readInt();
                 dados[i] = dis.readLong();
                 i++;
@@ -92,12 +94,13 @@ public class HashExtensivel {
         }
 
         public boolean create(int c, long d) {
-            if(full())
+            if (full()) {
                 return false;
-            int i=quantidade-1;
-            while(i>=0 && c<chaves[i]) {
-                chaves[i+1] = chaves[i];
-                dados[i+1] = dados[i];
+            }
+            int i = quantidade - 1;
+            while (i >= 0 && c < chaves[i]) {
+                chaves[i + 1] = chaves[i];
+                dados[i + 1] = dados[i];
                 i--;
             }
             i++;
@@ -108,48 +111,55 @@ public class HashExtensivel {
         }
 
         public long read(int c) {
-            if(empty())
+            if (empty()) {
                 return -1;
-            int i=0;
-            while(i<quantidade && c>chaves[i])
+            }
+            int i = 0;
+            while (i < quantidade && c > chaves[i]) {
                 i++;
-            if(i<quantidade && c==chaves[i])
+            }
+            if (i < quantidade && c == chaves[i]) {
                 return dados[i];
-            else
-                return -1;        
+            } else {
+                return -1;
+            }
         }
 
         public boolean update(int c, long d) {
-            if(empty())
+            if (empty()) {
                 return false;
-            int i=0;
-            while(i<quantidade && c>chaves[i])
+            }
+            int i = 0;
+            while (i < quantidade && c > chaves[i]) {
                 i++;
-            if(i<quantidade && c==chaves[i]) {
+            }
+            if (i < quantidade && c == chaves[i]) {
                 dados[i] = d;
                 return true;
+            } else {
+                return false;
             }
-            else
-                return false;        
         }
 
         public boolean delete(int c) {
-            if(empty())
+            if (empty()) {
                 return false;
-            int i=0;
-            while(i<quantidade && c>chaves[i])
+            }
+            int i = 0;
+            while (i < quantidade && c > chaves[i]) {
                 i++;
-            if(c==chaves[i]) {
-                while(i<quantidade-1) {
-                    chaves[i] = chaves[i+1];
-                    dados[i] = dados[i+1];
+            }
+            if (c == chaves[i]) {
+                while (i < quantidade - 1) {
+                    chaves[i] = chaves[i + 1];
+                    dados[i] = dados[i + 1];
                     i++;
                 }
                 quantidade--;
                 return true;
+            } else {
+                return false;
             }
-            else
-                return false;        
         }
 
         public boolean empty() {
@@ -159,18 +169,18 @@ public class HashExtensivel {
         public boolean full() {
             return quantidade == quantidadeMaxima;
         }
-        
+
         @Override
         public String toString() {
-            String s = "\nProfundidade Local: "+profundidadeLocal+
-                       "\nQuantidade: "+quantidade+
-                       "\n| ";
-            int i=0;
-            while(i<quantidade) {
+            String s = "\nProfundidade Local: " + profundidadeLocal
+                    + "\nQuantidade: " + quantidade
+                    + "\n| ";
+            int i = 0;
+            while (i < quantidade) {
                 s += chaves[i] + ";" + dados[i] + " | ";
                 i++;
             }
-            while(i<quantidadeMaxima) {
+            while (i < quantidadeMaxima) {
                 s += "-;- | ";
                 i++;
             }
@@ -185,7 +195,7 @@ public class HashExtensivel {
 
     class Diretório {
 
-        byte   profundidadeGlobal;
+        byte profundidadeGlobal;
         long[] endereços;
 
         public Diretório() {
@@ -195,8 +205,9 @@ public class HashExtensivel {
         }
 
         public boolean atualizaEndereco(int p, long e) {
-            if(p>Math.pow(2,profundidadeGlobal))
+            if (p > Math.pow(2, profundidadeGlobal)) {
                 return false;
+            }
             endereços[p] = e;
             return true;
         }
@@ -205,34 +216,34 @@ public class HashExtensivel {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             DataOutputStream dos = new DataOutputStream(baos);
             dos.writeByte(profundidadeGlobal);
-            int quantidade = (int)Math.pow(2,profundidadeGlobal);
-            int i=0;
-            while(i<quantidade) {
+            int quantidade = (int) Math.pow(2, profundidadeGlobal);
+            int i = 0;
+            while (i < quantidade) {
                 dos.writeLong(endereços[i]);
                 i++;
             }
-            return baos.toByteArray();            
+            return baos.toByteArray();
         }
 
         public void fromByteArray(byte[] ba) throws IOException {
             ByteArrayInputStream bais = new ByteArrayInputStream(ba);
             DataInputStream dis = new DataInputStream(bais);
             profundidadeGlobal = dis.readByte();
-            int quantidade = (int)Math.pow(2,profundidadeGlobal);
+            int quantidade = (int) Math.pow(2, profundidadeGlobal);
             endereços = new long[quantidade];
-            int i=0;
-            while(i<quantidade) {
+            int i = 0;
+            while (i < quantidade) {
                 endereços[i] = dis.readLong();
                 i++;
             }
         }
-        
+
         @Override
         public String toString() {
-            String s = "\nProfundidade global: "+profundidadeGlobal;
-            int i=0;
-            int quantidade = (int)Math.pow(2,profundidadeGlobal);
-            while(i<quantidade) {
+            String s = "\nProfundidade global: " + profundidadeGlobal;
+            int i = 0;
+            int quantidade = (int) Math.pow(2, profundidadeGlobal);
+            while (i < quantidade) {
                 s += "\n" + i + ": " + endereços[i];
                 i++;
             }
@@ -240,25 +251,27 @@ public class HashExtensivel {
         }
 
         protected long endereço(int p) {
-            if(p>Math.pow(2,profundidadeGlobal))
+            if (p > Math.pow(2, profundidadeGlobal)) {
                 return -1;
+            }
             return endereços[p];
         }
 
         protected boolean duplica() {
-            if(profundidadeGlobal==127)
+            if (profundidadeGlobal == 127) {
                 return false;
+            }
             profundidadeGlobal++;
-            int q1 = (int)Math.pow(2,profundidadeGlobal-1);
-            int q2 = (int)Math.pow(2,profundidadeGlobal);
+            int q1 = (int) Math.pow(2, profundidadeGlobal - 1);
+            int q2 = (int) Math.pow(2, profundidadeGlobal);
             long[] novosEnderecos = new long[q2];
-            int i=0;
-            while(i<q1) {
-                novosEnderecos[i]=endereços[i];
+            int i = 0;
+            while (i < q1) {
+                novosEnderecos[i] = endereços[i];
                 i++;
             }
-            while(i<q2) {
-                novosEnderecos[i]=endereços[i-q1];
+            while (i < q2) {
+                novosEnderecos[i] = endereços[i - q1];
                 i++;
             }
             endereços = novosEnderecos;
@@ -266,34 +279,31 @@ public class HashExtensivel {
         }
 
         protected int hash(int chave) {
-            return chave % (int)Math.pow(2, profundidadeGlobal);
+            return chave % (int) Math.pow(2, profundidadeGlobal);
         }
 
         protected int hash2(int chave, int pl) { // cálculo do hash para uma dada profundidade local
-            return chave % (int)Math.pow(2, pl);            
+            return chave % (int) Math.pow(2, pl);
         }
 
     }
-    
-    
-    
-    public HashExtensivel(int n, String nd, String nc ) throws Exception {
+
+    public HashExtensivel(int n, String nd, String nc) throws Exception {
         quantidadeDadosPorCesto = n;
         nomeArquivoDiretorio = nd;
         nomeArquivoCestos = nc;
-        
-        
-        arqDiretorio = new RandomAccessFile(nomeArquivoDiretorio,"rw");
-        arqCestos = new RandomAccessFile(nomeArquivoCestos,"rw");
+
+        arqDiretorio = new RandomAccessFile(nomeArquivoDiretorio, "rw");
+        arqCestos = new RandomAccessFile(nomeArquivoCestos, "rw");
 
         // Se o diretório ou os cestos estiverem vazios, cria um novo diretório e lista de cestos
-        if(arqDiretorio.length()==0 || arqCestos.length()==0) {
+        if (arqDiretorio.length() == 0 || arqCestos.length() == 0) {
 
             // Cria um novo diretório, com profundidade de 0 bits (1 único elemento)
             diretório = new Diretório();
             byte[] bd = diretório.toByteArray();
             arqDiretorio.write(bd);
-            
+
             // Cria um cesto vazio, já apontado pelo único elemento do diretório
             Cesto c = new Cesto(quantidadeDadosPorCesto);
             bd = c.toByteArray();
@@ -301,19 +311,19 @@ public class HashExtensivel {
             arqCestos.write(bd);
         }
     }
-    
+
     public boolean create(int chave, long dado) throws Exception {
-        
+
         //Carrega o diretório
-        byte[] bd = new byte[(int)arqDiretorio.length()];
+        byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretório = new Diretório();
-        diretório.fromByteArray(bd);        
-        
+        diretório.fromByteArray(bd);
+
         // Identifica a hash do diretório,
         int i = diretório.hash(chave);
-        
+
         // Recupera o cesto
         long endereçoCesto = diretório.endereço(i);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
@@ -321,74 +331,77 @@ public class HashExtensivel {
         arqCestos.seek(endereçoCesto);
         arqCestos.read(ba);
         c.fromByteArray(ba);
-        
+
         // Testa se a chave já não existe no cesto
-        if(c.read(chave)!=-1)
-            throw new Exception("Chave já existe");     
+        if (c.read(chave) != -1) {
+            throw new Exception("Chave já existe");
+        }
 
         // Testa se o cesto já não está cheio
         // Se não estiver, create o par de chave e dado
-        if(!c.full()) {
+        if (!c.full()) {
             // Insere a chave no cesto e o atualiza 
             c.create(chave, dado);
             arqCestos.seek(endereçoCesto);
             arqCestos.write(c.toByteArray());
-            return true;        
+            return true;
         }
-        
+
         // Duplica o diretório
         byte pl = c.profundidadeLocal;
-        if(pl>=diretório.profundidadeGlobal)
+        if (pl >= diretório.profundidadeGlobal) {
             diretório.duplica();
+        }
         byte pg = diretório.profundidadeGlobal;
 
         // Cria os novos cestos, com os seus dados no arquivo de cestos
-        Cesto c1 = new Cesto(quantidadeDadosPorCesto, pl+1);
+        Cesto c1 = new Cesto(quantidadeDadosPorCesto, pl + 1);
         arqCestos.seek(endereçoCesto);
         arqCestos.write(c1.toByteArray());
 
-        Cesto c2 = new Cesto(quantidadeDadosPorCesto, pl+1);
+        Cesto c2 = new Cesto(quantidadeDadosPorCesto, pl + 1);
         long novoEndereço = arqCestos.length();
         arqCestos.seek(novoEndereço);
         arqCestos.write(c2.toByteArray());
-        
+
         // Atualiza os dados no diretório
         int inicio = diretório.hash2(chave, c.profundidadeLocal);
-        int deslocamento = (int)Math.pow(2,pl);
-        int max = (int)Math.pow(2,pg);
+        int deslocamento = (int) Math.pow(2, pl);
+        int max = (int) Math.pow(2, pg);
         boolean troca = false;
-        for(int j=inicio; j<max; j+=deslocamento) {
-            if(troca)
-                diretório.atualizaEndereco(j,novoEndereço);
-            troca=!troca;
+        for (int j = inicio; j < max; j += deslocamento) {
+            if (troca) {
+                diretório.atualizaEndereco(j, novoEndereço);
+            }
+            troca = !troca;
         }
-        
+
         // Atualiza o arquivo do diretório
         bd = diretório.toByteArray();
         arqDiretorio.seek(0);
         arqDiretorio.write(bd);
-        
+
         // Reinsere as chaves
-        for(int j=0; j<c.quantidade; j++) {
+        for (int j = 0; j < c.quantidade; j++) {
             create(c.chaves[j], c.dados[j]);
         }
-        create(chave,dado);
-        return false;   
+        create(chave, dado);
+        return false;
 
     }
-    
+
     public long read(int chave) throws Exception {
-        
+
         //Carrega o diretório
-        byte[] bd = new byte[(int)arqDiretorio.length()];
+        byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretório = new Diretório();
-        diretório.fromByteArray(bd);        
-        
+        diretório.fromByteArray(bd);
+
         // Identifica a hash do diretório,
         int i = diretório.hash(chave);
-        
+
         // Recupera o cesto
         long endereçoCesto = diretório.endereço(i);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
@@ -396,22 +409,22 @@ public class HashExtensivel {
         arqCestos.seek(endereçoCesto);
         arqCestos.read(ba);
         c.fromByteArray(ba);
-        
+
         return c.read(chave);
     }
-    
+
     public boolean update(int chave, long novoDado) throws Exception {
-        
+
         //Carrega o diretório
-        byte[] bd = new byte[(int)arqDiretorio.length()];
+        byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretório = new Diretório();
-        diretório.fromByteArray(bd);        
-        
+        diretório.fromByteArray(bd);
+
         // Identifica a hash do diretório,
         int i = diretório.hash(chave);
-        
+
         // Recupera o cesto
         long endereçoCesto = diretório.endereço(i);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
@@ -419,30 +432,31 @@ public class HashExtensivel {
         arqCestos.seek(endereçoCesto);
         arqCestos.read(ba);
         c.fromByteArray(ba);
-        
+
         // atualiza o dado
-        if(!c.update(chave, novoDado))
+        if (!c.update(chave, novoDado)) {
             return false;
-        
+        }
+
         // Atualiza o cesto
         arqCestos.seek(endereçoCesto);
         arqCestos.write(c.toByteArray());
         return true;
-        
+
     }
-    
+
     public boolean delete(int chave) throws Exception {
-        
+
         //Carrega o diretório
-        byte[] bd = new byte[(int)arqDiretorio.length()];
+        byte[] bd = new byte[(int) arqDiretorio.length()];
         arqDiretorio.seek(0);
         arqDiretorio.read(bd);
         diretório = new Diretório();
-        diretório.fromByteArray(bd);        
-        
+        diretório.fromByteArray(bd);
+
         // Identifica a hash do diretório,
         int i = diretório.hash(chave);
-        
+
         // Recupera o cesto
         long endereçoCesto = diretório.endereço(i);
         Cesto c = new Cesto(quantidadeDadosPorCesto);
@@ -450,41 +464,42 @@ public class HashExtensivel {
         arqCestos.seek(endereçoCesto);
         arqCestos.read(ba);
         c.fromByteArray(ba);
-        
+
         // delete a chave
-        if(!c.delete(chave))
+        if (!c.delete(chave)) {
             return false;
-        
+        }
+
         // Atualiza o cesto
         arqCestos.seek(endereçoCesto);
         arqCestos.write(c.toByteArray());
         return true;
     }
-    
+
     public void print() {
         try {
-            byte[] bd = new byte[(int)arqDiretorio.length()];
+            byte[] bd = new byte[(int) arqDiretorio.length()];
             arqDiretorio.seek(0);
             arqDiretorio.read(bd);
             diretório = new Diretório();
-            diretório.fromByteArray(bd);   
+            diretório.fromByteArray(bd);
             System.out.println("\nDIRETÓRIO ------------------");
             System.out.println(diretório);
 
             System.out.println("\nCESTOS ---------------------");
             arqCestos.seek(0);
-            while(arqCestos.getFilePointer() != arqCestos.length()) {
+            while (arqCestos.getFilePointer() != arqCestos.length()) {
                 Cesto c = new Cesto(quantidadeDadosPorCesto);
                 byte[] ba = new byte[c.size()];
                 arqCestos.read(ba);
                 c.fromByteArray(ba);
                 System.out.println(c);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
-    
+
 //
 //    // Método principal apenas para testes
 //    public static void main(String[] args) {
@@ -550,4 +565,3 @@ public class HashExtensivel {
 //    
 //    
 }
-

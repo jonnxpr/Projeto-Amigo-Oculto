@@ -1,5 +1,8 @@
-package amigooculto;
+package amigooculto.hud;
 
+import amigooculto.bancoDeDados.CRUD;
+import amigooculto.entidades.Sugestao;
+import amigooculto.entidades.Usuario;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -15,20 +18,25 @@ public class Interface {
 
     private String nomeAplicacao;
     private String versaoAplicacao;
-    private CRUD crud;
+    private CRUD<Usuario> crudUsuario;
+    private CRUD<Sugestao> crudSugestao;
     private final Scanner in;
     private boolean isLogged;
-    private Usuario usuario;
+    public static Usuario usuario;
     private final HashMap<Short, String> opcoesMenuInicial;
     private final HashMap<Short, String> opcoesMenuPrincipal;
+    private final HashMap<Short, String> opcoesMenuSugestoes;
+    private int ultimoMenuVisitado;
 
     public Interface(String nome, String versao) {
         this.nomeAplicacao = nome;
         this.versaoAplicacao = versao;
         this.isLogged = false;
-
+        this.ultimoMenuVisitado = 1;
+        
         try {
-            crud = new CRUD("BancoDeDados");
+            crudUsuario = new CRUD("BDUsuario", Usuario.class.getConstructor());
+            crudSugestao = new CRUD("BDSugestao", Sugestao.class.getConstructor());
         } catch (Exception ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -42,11 +50,20 @@ public class Interface {
         opcoesMenuInicial.put((short) 4, "Sair");
 
         opcoesMenuPrincipal = new HashMap<>();
-        opcoesMenuPrincipal.put((short) 1, "Deslogar");
+        opcoesMenuPrincipal.put((short) 1, "Sugestão de presentes");
+        opcoesMenuPrincipal.put((short) 2, "Grupos");
+        opcoesMenuPrincipal.put((short) 3, "Deslogar");
+
+        opcoesMenuSugestoes = new HashMap<>();
+        opcoesMenuSugestoes.put((short) 1, "Listar");
+        opcoesMenuSugestoes.put((short) 2, "Incluir");
+        opcoesMenuSugestoes.put((short) 3, "Alterar");
+        opcoesMenuSugestoes.put((short) 4, "Excluir");
+        opcoesMenuSugestoes.put((short) 5, "Retornar ao menu anterior");
     }
 
     public void loopExec() throws Exception {
-        boolean exec = true;
+        boolean exec;
         do {
             if (!isLogged) {
                 exec = showMenuInicial();
@@ -63,15 +80,17 @@ public class Interface {
         System.out.println(nomeAplicacao + " " + versaoAplicacao);
         System.out.println("Desenvolvido pelo Grupo 3");
         System.out.println("--------------------------");
-        if (isLogged){
+        if (isLogged) {
             System.out.println("Você está logado como " + usuario.getNome());
             System.out.println("--------------------------");
+
         }
-        
     }
 
     public boolean showMenuInicial() throws Exception {
-        boolean exec = true;
+        ultimoMenuVisitado = 1;
+        
+        boolean exec;
 
         showHeader();
 
@@ -83,6 +102,8 @@ public class Interface {
     }
 
     public boolean showMenuPrincipal() throws Exception {
+        ultimoMenuVisitado = 2;
+        
         boolean exec = true;
 
         showHeader();
@@ -94,9 +115,18 @@ public class Interface {
         return exec;
     }
 
+    public void showMenuSugestoes() throws Exception {
+        ultimoMenuVisitado = 3;
+        clearScreen();
+        showHeader();
+        showOpcoes((short) 3);
+        procOption(getOption((short) 3), (short) 3);
+    }
+
     /**
-     * menu = 1 -> menu inicial menu = 2 -> menu principal
-     *
+     * menu = 1 -> menu inicial 
+     * menu = 2 -> menu principal
+     * menu = 3 -> menu sugestões
      * @param menu
      */
     private void showOpcoes(short menu) {
@@ -111,16 +141,21 @@ public class Interface {
                     System.out.println(s + ")" + opcoesMenuPrincipal.get(s));
                 }
                 break;
+            case 3:
+                for (Short s : opcoesMenuSugestoes.keySet()) {
+                    System.out.println(s + ")" + opcoesMenuSugestoes.get(s));
+                }
+                break;
             default:
                 System.out.println("ERRO: Não foi possível exibir o menu desejado.");
                 break;
         }
-
     }
 
     /**
-     * menu = 1 -> menu inicial menu = 2 -> menu principal
-     *
+     * menu = 1 -> menu inicial 
+     * menu = 2 -> menu principal
+     * menu = 3 -> menu sugestões
      * @param menu
      * @return opcao escolhida
      */
@@ -142,6 +177,12 @@ public class Interface {
                     option = in.nextShort();
                 }
                 break;
+            case 3:
+                while (!opcoesMenuSugestoes.containsKey(option)) {
+                    System.out.print("\nOpção inválida. Insira novamente: ");
+                    option = in.nextShort();
+                }
+                break;
             default:
                 System.out.println("ERRO: Opção inexistente.");
                 break;
@@ -149,7 +190,15 @@ public class Interface {
 
         return option;
     }
-
+    /**
+     * menu = 1 -> menu inicial 
+     * menu = 2 -> menu principal
+     * menu = 3 -> menu sugestões
+     * @param option
+     * @param menu
+     * @return
+     * @throws Exception 
+     */
     private boolean procOption(short option, short menu) throws Exception {
 
         if (menu == 1) {
@@ -173,14 +222,38 @@ public class Interface {
         } else if (menu == 2) {
             switch (option) {
                 case 1:
+                    showMenuSugestoes();
+                    return true;
+                case 2:
+                    return true;
+                case 3:
                     setIsLogged(false);
                     return true;
                 default:
                     System.out.println("ERRO: Opção inexistente.");
                     break;
             }
+        } else if (menu == 3) {
+            switch (option) {
+                case 1:
+                    procListagemSugestoes();
+                    break;
+                case 2:
+                    procCadastroSugestao();
+                    break;
+                case 3:
+                    procAlteracaoSugestao();
+                    break;
+                case 4:
+                    procExclusaoSugestao();
+                    break;
+                case 5:
+                    break;
+                default:
+                    System.out.println("ERRO: Opção inexistente.");
+                    break;
+            }
         }
-
         return true;
     }
 
@@ -191,14 +264,14 @@ public class Interface {
     private Usuario procLogin() throws Exception {
         String email;
         String senha;
-        Usuario usuario;
+        Usuario us;
 
         in.nextLine();
         System.out.print("\nDigite seu email: ");
         email = in.nextLine();
 
-        if ((usuario = crud.read(email)) == null) {
-            System.out.println("\nERRO: O email inserido é inválido.");
+        if ((us = crudUsuario.read(email)) == null) {
+            System.out.println("\nERRO: Não existe usuário cadastrado para o email inserido.");
             pressToContinue();
             return null;
         }
@@ -206,7 +279,7 @@ public class Interface {
         System.out.print("\nDigite sua senha: ");
         senha = in.nextLine();
 
-        if (!usuario.getSenha().equals(senha)) {
+        if (!us.getSenha().equals(senha)) {
             System.out.println("\nERRO: A senha inserida é inválida.");
             pressToContinue();
             return null;
@@ -215,12 +288,12 @@ public class Interface {
         System.out.println("\nLogin realizado com sucesso!\n\n\n");
 
         setIsLogged(true);
-        
-        return usuario;
+
+        return us;
     }
 
     private void procCadastro() throws Exception {
-        Usuario usuario;
+        Usuario us;
         String email;
         String nome;
         String apelido;
@@ -232,7 +305,7 @@ public class Interface {
         System.out.print("\nDigite seu email: ");
         email = in.nextLine();
 
-        if (crud.read(email) != null || !isValidEmailAddressRegex(email)) {
+        if (crudUsuario.read(email) != null || !isValidEmailAddressRegex(email)) {
             System.out.println("\nERRO: O email inserido já pertence a outro usuário ou é inválido.");
             pressToContinue();
             return;
@@ -241,7 +314,7 @@ public class Interface {
         System.out.print("\nDigite seu nome: ");
         nome = in.nextLine();
 
-        while (nome == null || nome.length() < 1) {
+        while (nome.equals("") || nome.length() < 1) {
             System.out.println("ERRO: O nome inserido é inválido. Insira novamente.");
             System.out.print("\nDigite seu nome: ");
             nome = in.nextLine();
@@ -259,7 +332,7 @@ public class Interface {
         System.out.print("\nDigite sua senha (no mínimo 5 caracteres): ");
         senha = in.nextLine();
 
-        while (senha == null || senha.length() < 5) {
+        while (senha.equals("") || senha.length() < 5) {
             System.out.println("ERRO: A senha inserida é inválida. Insira novamente.");
             System.out.print("\nDigite sua senha (no mínimo 5 caracteres): ");
             senha = in.nextLine();
@@ -268,16 +341,16 @@ public class Interface {
         System.out.print("\nDigite seu código de recuperação de senha (no mínimo 5 caracteres): ");
         codRec = in.nextLine();
 
-        while (codRec == null || codRec.length() < 5) {
+        while (codRec.equals("") || codRec.length() < 5) {
             System.out.println("ERRO: O código de recuperação é inválido. Insira novamente.");
             System.out.print("\nDigite seu código de recuperação de senha (no mínimo 5 caracteres): ");
             codRec = in.nextLine();
         }
 
-        usuario = new Usuario(nome, apelido, email, senha, codRec);
+        us = new Usuario(nome, apelido, email, senha, codRec);
 
         System.out.println("\nVocê confirma a criação de um usuário com estes dados? (Digite sim ou nao)\n");
-        System.out.println(usuario.toString());
+        System.out.println(us.toString());
 
         System.out.print("\nConfirma: ");
         confirma = in.nextLine();
@@ -289,19 +362,19 @@ public class Interface {
         }
 
         if (confirma.equals("sim")) {
-            crud.create(usuario);
+            crudUsuario.create(us);
             System.out.println("\nUsuário cadastrado com sucesso.");
-            pressToContinue();
         }
         if (confirma.equals("nao")) {
             System.out.println("\nCadastro de usuário abortado.");
-            pressToContinue();
         }
+
+        pressToContinue();
     }
 
     private void procRecSenha() throws Exception {
         String email;
-        Usuario usuario;
+        Usuario us;
         String novaSenha;
         String codRec;
 
@@ -309,33 +382,288 @@ public class Interface {
         System.out.print("\nDigite seu email: ");
         email = in.nextLine();
 
-        if ((usuario = crud.read(email)) == null) {
+        if ((us = crudUsuario.read(email)) == null) {
             System.out.println("\nERRO: Não existe usuário cadastrado com este email.");
-            pressToContinue();
         } else {
             System.out.print("\nDigite seu código de recuperação: ");
             codRec = in.nextLine();
 
-            if (codRec.equals(usuario.getCodigoDeRecuperacao())) {
-                System.out.print("\nDigite e nova senha (no mínimo 5 caracteres): ");
+            if (codRec.equals(us.getCodigoDeRecuperacao())) {
+                System.out.print("\nDigite a nova senha (no mínimo 5 caracteres): ");
                 novaSenha = in.nextLine();
 
-                while (novaSenha == null || novaSenha.length() < 5) {
+                while (novaSenha.equals("") || novaSenha.length() < 5) {
                     System.out.println("ERRO: A senha inserida é inválida. Insira novamente.");
                     System.out.print("\nDigite sua senha (no mínimo 5 caracteres): ");
                     novaSenha = in.nextLine();
                 }
 
-                usuario.setSenha(novaSenha);
-                crud.update(usuario);
+                us.setSenha(novaSenha);
+                crudUsuario.update(us);
 
                 System.out.println("\nSenha atualizada com sucesso!");
             } else {
                 System.out.println("\nERRO: Código de recuperação inválido.");
-                pressToContinue();
+            }
+        }
+
+        pressToContinue();
+    }
+
+    private void procListagemSugestoes() throws Exception {
+        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+
+        in.nextLine();
+        clearScreen();
+
+        if (listaIdSugestoes.length != 0) {
+            System.out.println("Minhas sugestões: \n");
+            for (int i = 0; i < listaIdSugestoes.length; i++) {
+                System.out.print((i + 1) + ". ");
+                System.out.println(crudSugestao.read(listaIdSugestoes[i]).toString());
+                System.out.println();
+            }
+        } else {
+            System.out.println("Você não possui sugestões cadastradas.");
+        }
+
+        pressToContinue();
+    }
+
+    private void procCadastroSugestao() throws Exception {
+        Sugestao sg;
+        String produto, loja, observacoes;
+        float valor;
+        String confirma;
+
+        in.nextLine();
+        System.out.print("\nDigite o nome do produto: ");
+        produto = in.nextLine();
+
+        if (!produto.equals("")) {
+            System.out.print("\nDigite o nome da loja: ");
+            loja = in.nextLine();
+
+            while (loja.equals("")) {
+                System.out.println("ERRO: O nome fornecido para loja é inválido. Insira novamente.");
+                System.out.print("\nDigite o nome da loja: ");
+                loja = in.nextLine();
             }
 
+            System.out.print("\nDigite as observações: ");
+            observacoes = in.nextLine();
+
+            while (observacoes.equals("")) {
+                System.out.println("ERRO: Texto inválido. Insira novamente.");
+                System.out.print("\nDigite as observações: ");
+                observacoes = in.nextLine();
+            }
+
+            System.out.print("\nDigite o valor: ");
+            valor = in.nextFloat();
+
+            while (valor <= 0) {
+                System.out.println("ERRO: O valor inserido é inválido. Insira novamente.");
+                System.out.print("\nDigite o valor: ");
+                valor = in.nextFloat();
+            }
+
+            in.nextLine();
+            sg = new Sugestao(produto, loja, valor, observacoes);
+
+            System.out.println("\nVocê confirma a criação de uma sugestão com estes dados? (Digite sim ou nao)\n");
+            System.out.println(sg.toString());
+
+            System.out.print("\nConfirma: ");
+            confirma = in.nextLine();
+
+            while ((!confirma.equals("sim")) && (!confirma.equals("nao"))) {
+                System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                System.out.print("Confirma: ");
+                confirma = in.nextLine();
+            }
+
+            if (confirma.equals("sim")) {
+                int id = crudSugestao.create(sg);
+                crudSugestao.getIndiceRelacionamento().create(usuario.getId(), id);
+                System.out.println("\nSugestão cadastrada com sucesso.");
+            }
+
+            if (confirma.equals("nao")) {
+                System.out.println("\nCadastro de sugestão abortado.");
+            }
+
+            pressToContinue();
         }
+    }
+
+    private void procAlteracaoSugestao() throws Exception {
+        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+        String sgEscolhida;
+        Sugestao escolhida;
+        int alterado = 0;
+        String produto, loja, observacoes;
+        String valor;
+        String confirma;
+
+        in.nextLine();
+        clearScreen();
+
+        if (listaIdSugestoes.length != 0) {
+            System.out.println("Minhas sugestões: \n");
+            for (int i = 0; i < listaIdSugestoes.length; i++) {
+                System.out.print((i + 1) + ". ");
+                System.out.println(crudSugestao.read(listaIdSugestoes[i]).toString());
+                System.out.println();
+            }
+
+            System.out.print("Qual sugestão deseja alterar: ");
+            sgEscolhida = in.nextLine();
+            //System.out.println("sg = " + sgEscolhida);
+            if (sgEscolhida.equals("0")) {
+
+            } else {
+                while (sgEscolhida.equals("") || (Integer.parseInt(sgEscolhida) < 0 || Integer.parseInt(sgEscolhida) > listaIdSugestoes.length)) {
+                    System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                    System.out.print("\nQual sugestão deseja alterar: ");
+                    sgEscolhida = in.nextLine();
+                }
+                
+                if (sgEscolhida.equals("0")){
+                    return;
+                }
+                
+                escolhida = crudSugestao.read(listaIdSugestoes[Integer.parseInt(sgEscolhida) - 1]);
+
+                System.out.println("\n\nOs dados da sugestão que deseja alterar são: ");
+                System.out.println(escolhida.toString());
+
+                System.out.print("\nDigite o novo nome do produto: ");
+                produto = in.nextLine();
+
+                if (!produto.equals("")) {
+                    escolhida.setProduto(produto);
+                    alterado++;
+                }
+
+                System.out.print("\nDigite o novo nome da loja: ");
+                loja = in.nextLine();
+
+                if (!loja.equals("")) {
+                    escolhida.setLoja(loja);
+                    alterado++;
+                }
+
+                System.out.print("\nDigite o novo valor: ");
+                valor = in.nextLine();
+
+                if (!valor.equals("")) {
+                    escolhida.setValor(Float.parseFloat(valor));
+                    alterado++;
+                }
+
+                System.out.print("\nDigite as novas observações: ");
+                observacoes = in.nextLine();
+
+                if (!observacoes.equals("")) {
+                    escolhida.setObservacoes(observacoes);
+                    alterado++;
+                }
+
+                if (alterado != 0) {
+                    System.out.println("\nVocê confirma a alteração da sugestão com estes dados? (Digite sim ou nao)\n");
+                    System.out.println(escolhida.toString());
+
+                    System.out.print("\nConfirma: ");
+                    confirma = in.nextLine();
+
+                    while ((!confirma.equals("sim")) && (!confirma.equals("nao"))) {
+                        System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                        System.out.print("Confirma: ");
+                        confirma = in.nextLine();
+                    }
+
+                    if (confirma.equals("sim")) {
+                        crudSugestao.update(escolhida);
+                        System.out.println("\nSugestão atualizada com sucesso.");
+                    }
+
+                    if (confirma.equals("nao")) {
+                        System.out.println("\nAtualização de sugestão abortada.");
+                    }
+                } else {
+                    System.out.println("Nenhum dado foi alterado.");
+                }
+            }
+        } else {
+            System.out.println("Você não possui sugestões cadastradas.");
+        }
+        pressToContinue();
+    }
+
+    private void procExclusaoSugestao() throws Exception {
+        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+        String sgEscolhida;
+        Sugestao escolhida;
+        String confirma;
+
+        in.nextLine();
+        clearScreen();
+
+        if (listaIdSugestoes.length != 0) {
+            System.out.println("Minhas sugestões: \n");
+            for (int i = 0; i < listaIdSugestoes.length; i++) {
+                System.out.print((i + 1) + ". ");
+                System.out.println(crudSugestao.read(listaIdSugestoes[i]).toString());
+                System.out.println();
+            }
+
+            System.out.print("Qual sugestão deseja excluir: ");
+            sgEscolhida = in.nextLine();
+            if (sgEscolhida.equals("0")) {
+
+            } else {
+                while (sgEscolhida.equals("") || (Integer.parseInt(sgEscolhida) < 0 || Integer.parseInt(sgEscolhida) > listaIdSugestoes.length)) {
+                    System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                    System.out.print("\nQual sugestão deseja excluir: ");
+                    sgEscolhida = in.nextLine();
+                }
+                
+                if (sgEscolhida.equals("0")){
+                    return;
+                }
+                
+                escolhida = crudSugestao.read(listaIdSugestoes[Integer.parseInt(sgEscolhida) - 1]);
+
+                System.out.println("\n\nOs dados da sugestão que deseja excluir são: ");
+                System.out.println(escolhida.toString());
+
+                System.out.println("\nVocê confirma a exclusão da sugestão acima? (Digite sim ou nao)\n");
+
+                System.out.print("\nConfirma: ");
+                confirma = in.nextLine();
+
+                while ((!confirma.equals("sim")) && (!confirma.equals("nao"))) {
+                    System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                    System.out.print("Confirma: ");
+                    confirma = in.nextLine();
+                }
+
+                if (confirma.equals("sim")) {
+                    crudSugestao.delete(escolhida.getId());
+                    crudSugestao.getIndiceRelacionamento().delete(usuario.getId(), escolhida.getId());
+                    System.out.println("\nSugestão excluída com sucesso.");
+                }
+
+                if (confirma.equals("nao")) {
+                    System.out.println("\nExclusão de sugestão abortada.");
+                }
+            }
+        } else {
+            System.out.println("Você não possui sugestões cadastradas.");
+        }
+        
+        pressToContinue();
     }
 
     public static boolean isValidEmailAddressRegex(String email) {
@@ -367,7 +695,7 @@ public class Interface {
         this.versaoAplicacao = versaoAplicacao;
     }
 
-    public boolean isIsLogged() {
+    public boolean isLogged() {
         return isLogged;
     }
 
@@ -378,8 +706,8 @@ public class Interface {
     private void clearScreen() {
         System.out.print("\n\n\n");
     }
-    
-    private void pressToContinue(){
+
+    private void pressToContinue() {
         System.out.println("Pressione qualquer tecla para continuar...");
         in.nextLine();
     }

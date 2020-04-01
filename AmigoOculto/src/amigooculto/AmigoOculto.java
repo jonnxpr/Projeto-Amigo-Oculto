@@ -1,5 +1,6 @@
 package amigooculto;
 
+import amigooculto.hud.Interface;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,5 +21,5 @@ public class AmigoOculto {
             Logger.getLogger(AmigoOculto.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
 }

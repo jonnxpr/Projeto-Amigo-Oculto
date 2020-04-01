@@ -1,5 +1,6 @@
-package amigooculto;
+package amigooculto.entidades;
 
+import amigooculto.interfaces.Registro;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -10,7 +11,7 @@ import java.io.IOException;
  *
  * @author Jonathan
  */
-public class Usuario {
+public class Usuario implements Registro {
 
     //Atributos
     private int idUsuario;
@@ -19,9 +20,8 @@ public class Usuario {
     private String email;
     private String senha;
     private String codigoDeRecuperacao;
-    
-    
-    public Usuario(){
+
+    public Usuario() {
         this.idUsuario = -1;
         this.nome = "";
         this.apelido = "";
@@ -29,7 +29,7 @@ public class Usuario {
         this.senha = "";
         this.codigoDeRecuperacao = "";
     }
-    
+
     public Usuario(String nome, String apelido, String email, String senha, String codigoDeResgate) {
         this.idUsuario = -1;
         this.nome = nome;
@@ -38,15 +38,16 @@ public class Usuario {
         this.senha = senha;
         this.codigoDeRecuperacao = codigoDeResgate;
     }
-    
-    //Getter e Setter
 
-    public int getIdUsuario() {
+    //Getter e Setter
+    @Override
+    public int getId() {
         return idUsuario;
     }
 
-    public void setIdUsuario(int idUsuario) {
-        this.idUsuario = idUsuario;
+    @Override
+    public void setId(int id) {
+        this.idUsuario = id;
     }
 
     public String getNome() {
@@ -88,30 +89,33 @@ public class Usuario {
     public void setCodigoDeRecuperacao(String codigoDeRecuperacao) {
         this.codigoDeRecuperacao = codigoDeRecuperacao;
     }
-    
+
     //Métodos auxiliares
+    @Override
     public String chaveSecundaria() {
         return this.email;
     }
 
+    @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();
         DataOutputStream saida = new DataOutputStream(dados);
-        
+
         saida.writeInt(this.idUsuario);
         saida.writeUTF(this.nome);
         saida.writeUTF(this.apelido);
         saida.writeUTF(this.email);
         saida.writeUTF(this.senha);
         saida.writeUTF(this.codigoDeRecuperacao);
-        
+
         return dados.toByteArray();
     }
 
+    @Override
     public void fromByteArray(byte[] bytes) throws IOException {
         ByteArrayInputStream dados = new ByteArrayInputStream(bytes);
         DataInputStream entrada = new DataInputStream(dados);
-        
+
         this.idUsuario = entrada.readInt();
         this.nome = entrada.readUTF();
         this.apelido = entrada.readUTF();
@@ -119,14 +123,15 @@ public class Usuario {
         this.senha = entrada.readUTF();
         this.codigoDeRecuperacao = entrada.readUTF();
     }
-    
+
     @Override
-    public String toString(){
+    public String toString() {
         String userString = "Nome: " + this.nome;
         userString += "\nApelido: " + this.apelido;
         userString += "\nEmail: " + this.email;
         userString += "\nSenha: " + this.senha;
         userString += "\nCódigo: " + this.codigoDeRecuperacao;
+        
         return userString;
     }
 }
