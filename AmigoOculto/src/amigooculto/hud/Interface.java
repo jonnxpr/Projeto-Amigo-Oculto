@@ -26,13 +26,17 @@ public class Interface {
     private final HashMap<Short, String> opcoesMenuInicial;
     private final HashMap<Short, String> opcoesMenuPrincipal;
     private final HashMap<Short, String> opcoesMenuSugestoes;
-    private int ultimoMenuVisitado;
+    Tela ultimaTela;
+    
+    public enum Tela {
+        MENU_INICIAL, MENU_PRINCIPAL, MENU_SUGESTOES;
+    }
 
     public Interface(String nome, String versao) {
         this.nomeAplicacao = nome;
         this.versaoAplicacao = versao;
         this.isLogged = false;
-        this.ultimoMenuVisitado = 1;
+        ultimaTela = Tela.MENU_INICIAL;
         
         try {
             crudUsuario = new CRUD("BDUsuario", Usuario.class.getConstructor());
@@ -66,9 +70,9 @@ public class Interface {
         boolean exec;
         do {
             if (!isLogged) {
-                exec = showMenuInicial();
+                exec = showMenu(ultimaTela);
             } else {
-                exec = showMenuPrincipal();
+                exec = showMenu(ultimaTela);
             }
 
             clearScreen();
@@ -86,62 +90,66 @@ public class Interface {
 
         }
     }
-
-    public boolean showMenuInicial() throws Exception {
-        ultimoMenuVisitado = 1;
-        
+    
+    public boolean showMenu(Tela menu) throws Exception {
         boolean exec;
 
         showHeader();
 
-        showOpcoes((short) 1);
+        showOpcoes(menu);
 
-        exec = procOption(getOption((short) 1), (short) 1);
+        exec = procOption(getOption(menu), menu);
+
+        return exec;
+    }
+
+    public boolean showMenuInicial() throws Exception {
+        boolean exec;
+
+        showHeader();
+
+        showOpcoes(Tela.MENU_INICIAL);
+
+        exec = procOption(getOption(Tela.MENU_INICIAL), Tela.MENU_INICIAL);
 
         return exec;
     }
 
     public boolean showMenuPrincipal() throws Exception {
-        ultimoMenuVisitado = 2;
-        
-        boolean exec = true;
+        boolean exec;
 
         showHeader();
 
-        showOpcoes((short) 2);
+        showOpcoes(Tela.MENU_PRINCIPAL);
 
-        procOption(getOption((short) 2), (short) 2);
+        exec = procOption(getOption(Tela.MENU_PRINCIPAL), Tela.MENU_PRINCIPAL);
 
         return exec;
     }
 
     public void showMenuSugestoes() throws Exception {
-        ultimoMenuVisitado = 3;
         clearScreen();
         showHeader();
-        showOpcoes((short) 3);
-        procOption(getOption((short) 3), (short) 3);
+        showOpcoes(Tela.MENU_SUGESTOES);
+        procOption(getOption(Tela.MENU_SUGESTOES), Tela.MENU_SUGESTOES);
     }
 
     /**
-     * menu = 1 -> menu inicial 
-     * menu = 2 -> menu principal
-     * menu = 3 -> menu sugestões
      * @param menu
      */
-    private void showOpcoes(short menu) {
+    private void showOpcoes(Tela menu) {
         switch (menu) {
-            case 1:
+            case MENU_INICIAL:
                 for (Short s : opcoesMenuInicial.keySet()) {
                     System.out.println(s + ")" + opcoesMenuInicial.get(s));
                 }
                 break;
-            case 2:
+            case MENU_PRINCIPAL:
                 for (Short s : opcoesMenuPrincipal.keySet()) {
                     System.out.println(s + ")" + opcoesMenuPrincipal.get(s));
                 }
                 break;
-            case 3:
+            case MENU_SUGESTOES:
                 for (Short s : opcoesMenuSugestoes.keySet()) {
                     System.out.println(s + ")" + opcoesMenuSugestoes.get(s));
                 }
@@ -153,31 +161,28 @@ public class Interface {
     }
 
     /**
-     * menu = 1 -> menu inicial 
-     * menu = 2 -> menu principal
-     * menu = 3 -> menu sugestões
      * @param menu
      * @return opcao escolhida
      */
-    private short getOption(short menu) {
+    private short getOption(Tela menu) {
         short option;
         System.out.print("Opção: ");
         option = in.nextShort();
 
         switch (menu) {
-            case 1:
+            case MENU_INICIAL:
                 while (!opcoesMenuInicial.containsKey(option)) {
                     System.out.print("\nOpção inválida. Insira novamente: ");
                     option = in.nextShort();
                 }
                 break;
-            case 2:
+            case MENU_PRINCIPAL:
                 while (!opcoesMenuPrincipal.containsKey(option)) {
                     System.out.print("\nOpção inválida. Insira novamente: ");
                     option = in.nextShort();
                 }
                 break;
-            case 3:
+            case MENU_SUGESTOES:
                 while (!opcoesMenuSugestoes.containsKey(option)) {
                     System.out.print("\nOpção inválida. Insira novamente: ");
                     option = in.nextShort();
@@ -190,21 +195,20 @@ public class Interface {
 
         return option;
     }
+
     /**
-     * menu = 1 -> menu inicial 
-     * menu = 2 -> menu principal
-     * menu = 3 -> menu sugestões
      * @param option
      * @param menu
      * @return
-     * @throws Exception 
+     * @throws Exception
      */
-    private boolean procOption(short option, short menu) throws Exception {
+    private boolean procOption(short option, Tela menu) throws Exception {
 
-        if (menu == 1) {
+        if (menu == Tela.MENU_INICIAL) {
             switch (option) {
                 case 1:
                     usuario = procLogin();
+                    ultimaTela = Tela.MENU_PRINCIPAL;
                     return true;
                 case 2:
                     procCadastro();
@@ -219,21 +223,23 @@ public class Interface {
                     System.out.println("ERRO: Opção inexistente.");
                     return false;
             }
-        } else if (menu == 2) {
+        } else if (menu == Tela.MENU_PRINCIPAL) {
             switch (option) {
                 case 1:
                     showMenuSugestoes();
+                    ultimaTela = Tela.MENU_SUGESTOES;
                     return true;
                 case 2:
                     return true;
                 case 3:
+                    ultimaTela = Tela.MENU_INICIAL;
                     setIsLogged(false);
                     return true;
                 default:
                     System.out.println("ERRO: Opção inexistente.");
                     break;
             }
-        } else if (menu == 3) {
+        } else if (menu == Tela.MENU_SUGESTOES) {
             switch (option) {
                 case 1:
                     procListagemSugestoes();
@@ -248,6 +254,7 @@ public class Interface {
                     procExclusaoSugestao();
                     break;
                 case 5:
+                    ultimaTela = Tela.MENU_PRINCIPAL;
                     break;
                 default:
                     System.out.println("ERRO: Opção inexistente.");
@@ -528,11 +535,11 @@ public class Interface {
                     System.out.print("\nQual sugestão deseja alterar: ");
                     sgEscolhida = in.nextLine();
                 }
-                
-                if (sgEscolhida.equals("0")){
+
+                if (sgEscolhida.equals("0")) {
                     return;
                 }
-                
+
                 escolhida = crudSugestao.read(listaIdSugestoes[Integer.parseInt(sgEscolhida) - 1]);
 
                 System.out.println("\n\nOs dados da sugestão que deseja alterar são: ");
@@ -628,11 +635,11 @@ public class Interface {
                     System.out.print("\nQual sugestão deseja excluir: ");
                     sgEscolhida = in.nextLine();
                 }
-                
-                if (sgEscolhida.equals("0")){
+
+                if (sgEscolhida.equals("0")) {
                     return;
                 }
-                
+
                 escolhida = crudSugestao.read(listaIdSugestoes[Integer.parseInt(sgEscolhida) - 1]);
 
                 System.out.println("\n\nOs dados da sugestão que deseja excluir são: ");
@@ -662,7 +669,7 @@ public class Interface {
         } else {
             System.out.println("Você não possui sugestões cadastradas.");
         }
-        
+
         pressToContinue();
     }
 
