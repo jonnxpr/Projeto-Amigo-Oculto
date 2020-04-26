@@ -2,7 +2,6 @@ package amigooculto.bancoDeDados;
 
 import amigooculto.entidades.Sugestao;
 import amigooculto.hud.Interface;
-import amigooculto.indices.ArvoreBMais_Int_Int;
 import amigooculto.interfaces.Registro;
 import amigooculto.indices.ArvoreBMais_String_Int;
 import amigooculto.indices.HashExtensivel;
@@ -21,10 +20,9 @@ public class CRUD<T extends Registro> {
     Constructor<T> construtor;
     public final String diretorio = "dados";
 
-    private RandomAccessFile arquivo;
-    private HashExtensivel indiceDireto;
-    private ArvoreBMais_String_Int indiceIndireto;
-    private ArvoreBMais_Int_Int indiceRelacionamento;
+    private final RandomAccessFile arquivo;
+    private final HashExtensivel indiceDireto;
+    private final ArvoreBMais_String_Int indiceIndireto;
 
     public CRUD(String nomeArquivo, Constructor<T> construtor) throws Exception {
         this.construtor = construtor;
@@ -46,16 +44,10 @@ public class CRUD<T extends Registro> {
 
         indiceIndireto = new ArvoreBMais_String_Int(10,
                 this.diretorio + "/indiceIndireto." + nomeArquivo + ".idx");
-        
+
         if (construtor.equals(Sugestao.class.getConstructor())) {
-            indiceRelacionamento = new ArvoreBMais_Int_Int(10,
-                this.diretorio + "/indiceRelacionamento." + nomeArquivo + ".idx");
+
         }
-        
-    }
-    
-    public ArvoreBMais_Int_Int getIndiceRelacionamento(){
-        return this.indiceRelacionamento;
     }
 
     //Métodos de utilização do CRUD
@@ -75,10 +67,6 @@ public class CRUD<T extends Registro> {
 
         indiceDireto.create(ultimoId, enderecoInsercao);
         indiceIndireto.create(novaInstancia.chaveSecundaria(), ultimoId);
-
-        if (novaInstancia.getClass().equals(Sugestao.class)) {
-            indiceRelacionamento.create(Interface.usuario.getId(), ultimoId);
-        }
 
         return novaInstancia.getId();
     }
@@ -150,10 +138,12 @@ public class CRUD<T extends Registro> {
         arquivo.writeBoolean(false);
         indiceIndireto.delete(instancia.chaveSecundaria());
         indiceDireto.delete(id);
-        
-        if (instancia.getClass().equals(Sugestao.class)) {
-            indiceRelacionamento.delete(Interface.usuario.getId(), id);
-        }
+
         return true;
+    }
+
+    //getter e setter
+    public String getDiretorio() {
+        return diretorio;
     }
 }

@@ -2,8 +2,11 @@ package amigooculto;
 
 import amigooculto.hud.Interface;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-
+import java.util.logging.Logger; 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 /**
  *
  * @author Jonathan
@@ -20,6 +23,19 @@ public class AmigoOculto {
         } catch (Exception ex) {
             Logger.getLogger(AmigoOculto.class.getName()).log(Level.SEVERE, null, ex);
         }
+        /*String myString = "22/05/1995 12:00";
+        String myString2 = "22/05/1995 12:01";
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+
+        DateTimeZone timeZone = DateTimeZone.forID("America/Sao_Paulo");
+        DateTime dateTime = formatter.withZone(timeZone).parseDateTime(myString);
+
+        long millisecondsSinceEpoch = dateTime.getMillis();
+        System.out.println("tempo em mili = " + millisecondsSinceEpoch);
+        
+        dateTime = formatter.withZone(timeZone).parseDateTime(myString2);
+        millisecondsSinceEpoch = dateTime.getMillis();
+        System.out.println("tempo em mili = " + millisecondsSinceEpoch);*/
     }
 
 }

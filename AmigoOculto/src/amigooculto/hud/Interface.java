@@ -1,8 +1,10 @@
 package amigooculto.hud;
 
 import amigooculto.bancoDeDados.CRUD;
+import amigooculto.entidades.Grupo;
 import amigooculto.entidades.Sugestao;
 import amigooculto.entidades.Usuario;
+import amigooculto.indices.ArvoreBMais_Int_Int;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.logging.Level;
@@ -20,6 +22,7 @@ public class Interface {
     private String versaoAplicacao;
     private CRUD<Usuario> crudUsuario;
     private CRUD<Sugestao> crudSugestao;
+    private CRUD<Grupo> crudGrupos;
     private final Scanner in;
     private boolean isLogged;
     public static Usuario usuario;
@@ -27,6 +30,8 @@ public class Interface {
     private final HashMap<Short, String> opcoesMenuPrincipal;
     private final HashMap<Short, String> opcoesMenuSugestoes;
     Tela ultimaTela;
+    private ArvoreBMais_Int_Int indiceRelacionamentoSugestaoUsuario;
+    private ArvoreBMais_Int_Int indiceRelacionamentoGrupoUsuario;
     
     public enum Tela {
         MENU_INICIAL, MENU_PRINCIPAL, MENU_SUGESTOES;
@@ -41,6 +46,10 @@ public class Interface {
         try {
             crudUsuario = new CRUD("BDUsuario", Usuario.class.getConstructor());
             crudSugestao = new CRUD("BDSugestao", Sugestao.class.getConstructor());
+            indiceRelacionamentoSugestaoUsuario = new ArvoreBMais_Int_Int(10,
+                this.crudUsuario.getDiretorio() + "/indiceRelacionamento." + "Sugestao" + ".idx");
+            indiceRelacionamentoGrupoUsuario = new ArvoreBMais_Int_Int(10,
+                this.crudUsuario.getDiretorio() + "/indiceRelacionamento." + "Grupo" + ".idx");
         } catch (Exception ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -418,7 +427,7 @@ public class Interface {
     }
 
     private void procListagemSugestoes() throws Exception {
-        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+        int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
 
         in.nextLine();
         clearScreen();
@@ -442,7 +451,7 @@ public class Interface {
         String produto, loja, observacoes;
         float valor;
         String confirma;
-
+        
         in.nextLine();
         System.out.print("\nDigite o nome do produto: ");
         produto = in.nextLine();
@@ -492,7 +501,7 @@ public class Interface {
 
             if (confirma.equals("sim")) {
                 int id = crudSugestao.create(sg);
-                crudSugestao.getIndiceRelacionamento().create(usuario.getId(), id);
+                indiceRelacionamentoSugestaoUsuario.create(usuario.getId(), id);
                 System.out.println("\nSugestão cadastrada com sucesso.");
             }
 
@@ -505,7 +514,7 @@ public class Interface {
     }
 
     private void procAlteracaoSugestao() throws Exception {
-        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+        int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
         String sgEscolhida;
         Sugestao escolhida;
         int alterado = 0;
@@ -609,7 +618,7 @@ public class Interface {
     }
 
     private void procExclusaoSugestao() throws Exception {
-        int[] listaIdSugestoes = crudSugestao.getIndiceRelacionamento().read(usuario.getId());
+        int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
         String sgEscolhida;
         Sugestao escolhida;
         String confirma;
@@ -658,7 +667,7 @@ public class Interface {
 
                 if (confirma.equals("sim")) {
                     crudSugestao.delete(escolhida.getId());
-                    crudSugestao.getIndiceRelacionamento().delete(usuario.getId(), escolhida.getId());
+                    indiceRelacionamentoSugestaoUsuario.delete(usuario.getId(), escolhida.getId());
                     System.out.println("\nSugestão excluída com sucesso.");
                 }
 

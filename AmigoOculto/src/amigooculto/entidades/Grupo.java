@@ -1,6 +1,10 @@
 package amigooculto.entidades;
 
 import amigooculto.interfaces.Registro;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 
 /**
@@ -134,12 +138,38 @@ public class Grupo implements Registro{
 
     @Override
     public byte[] toByteArray() throws IOException {
-        return null;
+        ByteArrayOutputStream dados = new ByteArrayOutputStream();
+        DataOutputStream saida = new DataOutputStream(dados);
+
+        saida.writeInt(this.idGrupo);
+        saida.writeInt(this.idUsuario);
+        saida.writeUTF(this.nome);
+        saida.writeLong(this.momentoSorteio);
+        saida.writeFloat(this.valor);
+        saida.writeLong(this.momentoEncontro);
+        saida.writeUTF(this.localEncontro);
+        saida.writeUTF(this.observacoes);
+        saida.writeBoolean(this.sorteado);
+        saida.writeBoolean(this.ativo);
+       
+        return dados.toByteArray();
     }
 
     @Override
     public void fromByteArray(byte[] bytes) throws IOException {
+        ByteArrayInputStream dados = new ByteArrayInputStream(bytes);
+        DataInputStream entrada = new DataInputStream(dados);
         
+        this.idGrupo = entrada.readInt();
+        this.idUsuario = entrada.readInt();
+        this.nome = entrada.readUTF();
+        this.momentoSorteio = entrada.readLong();
+        this.valor = entrada.readFloat();
+        this.momentoEncontro = entrada.readLong();
+        this.localEncontro = entrada.readUTF();
+        this.observacoes = entrada.readUTF();
+        this.sorteado = entrada.readBoolean();
+        this.ativo = entrada.readBoolean();
     }
     
 }
