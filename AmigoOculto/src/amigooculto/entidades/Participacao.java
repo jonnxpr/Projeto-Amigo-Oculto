@@ -17,7 +17,7 @@ public class Participacao implements Registro {
     private int idUsuario;
     private int idGrupo;
     private int idAmigo;
-    
+
     public Participacao() {
         this.idParticipacao = -1;
         this.idUsuario = -1;
@@ -48,8 +48,6 @@ public class Participacao implements Registro {
     public void setIdAmigo(int idAmigo) {
         this.idAmigo = idAmigo;
     }
-    
-    
 
     @Override
     public int getId() {
@@ -75,7 +73,7 @@ public class Participacao implements Registro {
         saida.writeInt(this.idUsuario);
         saida.writeInt(this.idGrupo);
         saida.writeInt(this.idAmigo);
-        
+
         return dados.toByteArray();
     }
 

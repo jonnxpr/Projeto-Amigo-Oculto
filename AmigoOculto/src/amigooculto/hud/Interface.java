@@ -1255,13 +1255,28 @@ public class Interface {
                 grp.setIdUsuario(usuario.getId());
                 int id = crudGrupos.create(grp);
                 indiceRelacionamentoGrupoUsuario.create(usuario.getId(), id);
-                Participacao participacao = new Participacao();
-                participacao.setIdGrupo(grp.getId());
-                participacao.setIdUsuario(usuario.getId());
-                int idParticipacao = crudParticipacao.create(participacao);
-                indiceRelacionamentoGrupoParticipacao.create(id, idParticipacao);
-                indiceRelacionamentoUsuarioParticipacao.create(usuario.getId(), idParticipacao);
-                System.out.println("\nGrupo cadastrado com sucesso.");
+
+                System.out.println("\nVocê deseja participar do grupo? (Digite sim ou nao)\n");
+
+                System.out.print("\nConfirma: ");
+                confirma = in.nextLine();
+
+                while ((!confirma.equals("sim")) && (!confirma.equals("nao"))) {
+                    System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                    System.out.print("Confirma: ");
+                    confirma = in.nextLine();
+                }
+
+                if (confirma.equals("sim")) {
+                    Participacao participacao = new Participacao();
+                    participacao.setIdGrupo(grp.getId());
+                    participacao.setIdUsuario(usuario.getId());
+                    int idParticipacao = crudParticipacao.create(participacao);
+                    indiceRelacionamentoGrupoParticipacao.create(id, idParticipacao);
+                    indiceRelacionamentoUsuarioParticipacao.create(usuario.getId(), idParticipacao);
+                }
+
+                System.out.println("\nGrupo cadastrado com sucesso");
             }
 
             if (confirma.equals("nao")) {
@@ -1706,12 +1721,14 @@ public class Interface {
         if (listaIdGrupos.length != 0) {
             System.out.println("Meus grupos: \n");
             int contador = 1;
+            int[] vetorId = new int[listaIdGrupos.length + 1];
             for (int i = 0; i < listaIdGrupos.length; i++) {
                 Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
                 if (grupo.isAtivo()) {
                     System.out.print((contador) + ". ");
                     System.out.println(grupo);
                     System.out.println();
+                    vetorId[contador] = grupo.getId();
                     contador++;
                 }
             }
@@ -1732,7 +1749,7 @@ public class Interface {
                     return;
                 }
 
-                escolhido = crudGrupos.read(listaIdGrupos[Integer.parseInt(grpEscolhido) - 1]);
+                escolhido = crudGrupos.read(listaIdGrupos[Integer.parseInt(grpEscolhido)]);
 
                 System.out.println("\n\nCONVITES DO GRUPO " + '"' + escolhido.getNome() + '"' + "\n");
 
@@ -1801,17 +1818,15 @@ public class Interface {
 
                 System.out.print("Digite um email para emitir o convite: ");
                 email = in.nextLine();
+
                 while (!email.isEmpty()) {
                     Convite cv;
                     if (!((cv = crudConvites.read(escolhido.getId() + "|" + email)) == null)) {
-                        if (email.equals(usuario.chaveSecundaria())) {
-                            clearScreen();
-                            System.out.println("ERRO: Não é possível enviar um convite para si mesmo.");
-                        } else if (cv.getEstado() == 0 || cv.getEstado() == 1) {
+                        if (cv.getEstado() == 0 || cv.getEstado() == 1) {
                             clearScreen();
                             System.out.println(cv);
+                                    
                             System.out.println("\n\nConvite já emitido para este usuário.\n");
-
                         } else if (cv.getEstado() == 2 || cv.getEstado() == 3) {
                             clearScreen();
                             System.out.println(cv);
@@ -2074,7 +2089,12 @@ public class Interface {
                         listaInvertidaEmailConvite.delete(cv.chaveSecundaria(), cv.getId());
                     }
                 }
-
+                
+                listaIdConvites = listaInvertidaEmailConvite.read(usuario.chaveSecundaria());
+                if (listaIdConvites.length == 0) {
+                    System.out.println("\n\nVocê não possui mais convites pendentes.\n\n");
+                    break;
+                }
                 System.out.print("Qual convite deseja aceitar ou recusar: ");
                 cvEscolhido = in.nextLine();
             }
@@ -2149,7 +2169,6 @@ public class Interface {
     }
 
     private void procRemocaoParticipantes() {
-
     }
 
     private boolean isValidEmailAddressRegex(String email) {
