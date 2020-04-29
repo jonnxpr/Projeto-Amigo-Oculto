@@ -95,14 +95,14 @@ public class Sugestao implements Registro {
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();
         DataOutputStream saida = new DataOutputStream(dados);
-        
+
         saida.writeInt(this.idSugestao);
         saida.writeInt(this.idUsuario);
         saida.writeUTF(this.produto);
         saida.writeUTF(this.loja);
         saida.writeFloat(this.valor);
         saida.writeUTF(this.observacoes);
-       
+
         return dados.toByteArray();
     }
 
@@ -110,7 +110,7 @@ public class Sugestao implements Registro {
     public void fromByteArray(byte[] bytes) throws IOException {
         ByteArrayInputStream dados = new ByteArrayInputStream(bytes);
         DataInputStream entrada = new DataInputStream(dados);
-        
+
         this.idSugestao = entrada.readInt();
         this.idUsuario = entrada.readInt();
         this.produto = entrada.readUTF();
@@ -118,14 +118,14 @@ public class Sugestao implements Registro {
         this.valor = entrada.readFloat();
         this.observacoes = entrada.readUTF();
     }
-    
+
     @Override
     public String toString() {
         String sugestaoString = "Produto: " + this.produto;
         sugestaoString += "\nLoja: " + this.loja;
         sugestaoString += "\nValor: R$ " + this.valor;
         sugestaoString += "\nObservações: " + this.observacoes;
-        
+
         return sugestaoString;
     }
 }

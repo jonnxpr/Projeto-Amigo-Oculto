@@ -131,7 +131,7 @@ public class Usuario implements Registro {
         userString += "\nEmail: " + this.email;
         userString += "\nSenha: " + this.senha;
         userString += "\nCódigo: " + this.codigoDeRecuperacao;
-        
+
         return userString;
     }
 }

@@ -6,24 +6,28 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
  * @author Jonathan
  */
-public class Grupo implements Registro{
+public class Grupo implements Registro {
+
     private int idGrupo;
     private int idUsuario;
     private String nome;
-    long momentoSorteio;
-    float valor;
-    long momentoEncontro;
-    String localEncontro;
-    String observacoes;
-    boolean sorteado;
-    boolean ativo;
-    
-    public Grupo(){
+    private long momentoSorteio;
+    private float valor;
+    private long momentoEncontro;
+    private String localEncontro;
+    private String observacoes;
+    private boolean sorteado;
+    private boolean ativo;
+
+    public Grupo() {
         this.idGrupo = -1;
         this.idUsuario = -1;
         this.nome = "";
@@ -118,9 +122,7 @@ public class Grupo implements Registro{
     public void setAtivo(boolean ativo) {
         this.ativo = ativo;
     }
-    
-    
-   
+
     @Override
     public int getId() {
         return this.idGrupo;
@@ -151,7 +153,7 @@ public class Grupo implements Registro{
         saida.writeUTF(this.observacoes);
         saida.writeBoolean(this.sorteado);
         saida.writeBoolean(this.ativo);
-       
+
         return dados.toByteArray();
     }
 
@@ -159,7 +161,7 @@ public class Grupo implements Registro{
     public void fromByteArray(byte[] bytes) throws IOException {
         ByteArrayInputStream dados = new ByteArrayInputStream(bytes);
         DataInputStream entrada = new DataInputStream(dados);
-        
+
         this.idGrupo = entrada.readInt();
         this.idUsuario = entrada.readInt();
         this.nome = entrada.readUTF();
@@ -171,5 +173,15 @@ public class Grupo implements Registro{
         this.sorteado = entrada.readBoolean();
         this.ativo = entrada.readBoolean();
     }
-    
+
+    @Override
+    public String toString() {
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+
+        String grupoString = this.nome;
+        grupoString += "\nData do encontro: " + formatter.print(this.momentoEncontro);
+        grupoString += "\nData do sorteio: " + formatter.print(this.momentoSorteio);
+
+        return grupoString;
+    }
 }
