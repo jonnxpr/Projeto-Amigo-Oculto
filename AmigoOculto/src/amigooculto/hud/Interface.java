@@ -1,14 +1,20 @@
 package amigooculto.hud;
 
+//Importações
 import amigooculto.bancoDeDados.CRUD;
+import amigooculto.entidades.Convite;
 import amigooculto.entidades.Grupo;
+import amigooculto.entidades.Mensagem;
+import amigooculto.entidades.Participacao;
 import amigooculto.entidades.Sugestao;
 import amigooculto.entidades.Usuario;
-import amigooculto.entidades.Convite;
-import amigooculto.entidades.Participacao;
-import amigooculto.indices.ArvoreBMais_Int_Int;
 import amigooculto.indices.ArvoreBMais_ChaveComposta_String_Int;
+import amigooculto.indices.ArvoreBMais_Int_Int;
+import java.util.ArrayList;
+import java.util.Collections;
+import static java.util.Comparator.comparing;
 import java.util.HashMap;
+import java.util.Random;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,17 +30,31 @@ import org.joda.time.format.DateTimeFormatter;
  * @author Jonathan
  */
 public class Interface {
-
+    //variável para guardar os dados do usuário logado
+    public static Usuario usuario;
+    
+    //Atributos da classe
+    
+    //Atributos relativos a aplicação
     private String nomeAplicacao;
     private String versaoAplicacao;
+    
+    //Atributos relativos aos CRUDS Genêricos
     private CRUD<Usuario> crudUsuario;
     private CRUD<Sugestao> crudSugestao;
     private CRUD<Grupo> crudGrupos;
     private CRUD<Convite> crudConvites;
     private CRUD<Participacao> crudParticipacao;
+    private CRUD<Mensagem> crudMensagens;
+    
+    //entrada de dados padrão
     private final Scanner in;
+    
+    //variável de verificação de existência de login
     private boolean isLogged;
-    public static Usuario usuario;
+    
+    
+    //HashMaps utilizados na estratégia de execução dos menus
     private final HashMap<Short, String> opcoesMenuInicial;
     private final HashMap<Short, String> opcoesMenuPrincipal;
     private final HashMap<Short, String> opcoesMenuSugestoes;
@@ -43,34 +63,43 @@ public class Interface {
     private final HashMap<Short, String> opcoesMenuGerencimentoDeGrupos_Grupos;
     private final HashMap<Short, String> opcoesMenuGerencimentoDeGrupos_Convites;
     private final HashMap<Short, String> opcoesMenuGerencimentoDeGrupos_Participantes;
+    private final HashMap<Short, String> opcoesMenuGrupos_ParticipacaoNosGrupos;
+    private final HashMap<Short, String> opcoesMenuGrupos_EnvioLeituraMensagens;
+    
+    //guarda a última tela (menu) visitada pelo usuário
     Tela ultimaTela;
+    
+    //Índices utilizados para criar os relacionamentos
     private ArvoreBMais_Int_Int indiceRelacionamentoSugestaoUsuario;
     private ArvoreBMais_Int_Int indiceRelacionamentoGrupoUsuario;
     private ArvoreBMais_Int_Int indiceRelacionamentoGrupoConvite;
     private ArvoreBMais_Int_Int indiceRelacionamentoGrupoParticipacao;
     private ArvoreBMais_Int_Int indiceRelacionamentoUsuarioParticipacao;
+    private ArvoreBMais_Int_Int indiceRelacionamentoUsuarioMensagem;
+    private ArvoreBMais_Int_Int indiceRelacionamentoGrupoMensagem;
     private ArvoreBMais_ChaveComposta_String_Int listaInvertidaEmailConvite;
+    
+    //variável para gerenciar a quantidade de convites que um usuário possui
     private int quantConvites;
-
-    public enum Tela {
-        MENU_INICIAL, MENU_PRINCIPAL, MENU_SUGESTOES, MENU_GRUPOS, MENU_GERENCIAMENTODEGRUPOS,
-        MENU_GERENCIAMENTODEGRUPOS_GRUPOS, MENU_GERENCIAMENTODEGRUPOS_CONVITES, MENU_CONVITES,
-        MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES;
-    }
-
+    
+    
+    //Construtor único e padrão
     public Interface(String nome, String versao) {
+        //seta os atributos iniciais necessários
         this.nomeAplicacao = nome;
         this.versaoAplicacao = versao;
         this.isLogged = false;
         ultimaTela = Tela.MENU_INICIAL;
         usuario = null;
-
+        
+        //inicializa tudo que for responsável por trabalhar com escrita e leitura nos arquivos
         try {
             crudUsuario = new CRUD("BDUsuario", Usuario.class.getConstructor());
             crudSugestao = new CRUD("BDSugestao", Sugestao.class.getConstructor());
             crudGrupos = new CRUD("BDGrupos", Grupo.class.getConstructor());
             crudConvites = new CRUD("BDConvites", Convite.class.getConstructor());
             crudParticipacao = new CRUD("BDParticipacao", Participacao.class.getConstructor());
+            crudMensagens = new CRUD("BDMensagens", Mensagem.class.getConstructor());
 
             indiceRelacionamentoSugestaoUsuario = new ArvoreBMais_Int_Int(10,
                     this.crudSugestao.getDiretorio() + "/indiceRelacionamento." + "Sugestao" + ".idx");
@@ -84,13 +113,19 @@ public class Interface {
                     this.crudGrupos.getDiretorio() + "/indiceRelacionamento." + "GrupoParticipacao" + ".idx");
             indiceRelacionamentoUsuarioParticipacao = new ArvoreBMais_Int_Int(10,
                     this.crudGrupos.getDiretorio() + "/indiceRelacionamento." + "UsuarioParticipacao" + ".idx");
+            indiceRelacionamentoGrupoMensagem = new ArvoreBMais_Int_Int(10,
+                    this.crudGrupos.getDiretorio() + "/indiceRelacionamento." + "GrupoMensagem" + ".idx");
+            indiceRelacionamentoUsuarioMensagem = new ArvoreBMais_Int_Int(10,
+                    this.crudGrupos.getDiretorio() + "/indiceRelacionamento." + "UsuarioMensagem" + ".idx");
 
         } catch (Exception ex) {
             Logger.getLogger(Interface.class.getName()).log(Level.SEVERE, null, ex);
         }
-
+        
+        //inicializa a entrada padrão
         in = new Scanner(System.in);
-
+        
+        //seta o conteúdo de cada menu através da criação de entradas no modelo (opção, nome da opção)
         opcoesMenuInicial = new HashMap<>();
         opcoesMenuInicial.put((short) 1, "Entrar");
         opcoesMenuInicial.put((short) 2, "Criar novo usuário (primeiro acesso)");
@@ -113,7 +148,8 @@ public class Interface {
         opcoesMenuGrupos = new HashMap<>();
         opcoesMenuGrupos.put((short) 1, "Criação e gerenciamento de grupos");
         opcoesMenuGrupos.put((short) 2, "Participação nos grupos");
-        opcoesMenuGrupos.put((short) 3, "Retornar ao menu anterior");
+        opcoesMenuGrupos.put((short) 3, "Enviar/Ler mensagens");
+        opcoesMenuGrupos.put((short) 4, "Retornar ao menu anterior");
 
         opcoesMenuGerencimentoDeGrupos = new HashMap<>();
         opcoesMenuGerencimentoDeGrupos.put((short) 1, "Grupos");
@@ -140,27 +176,44 @@ public class Interface {
         opcoesMenuGerencimentoDeGrupos_Participantes.put((short) 2, "Remoção");
         opcoesMenuGerencimentoDeGrupos_Participantes.put((short) 3, "Retornar ao menu anterior");
 
+        opcoesMenuGrupos_ParticipacaoNosGrupos = new HashMap<>();
+        opcoesMenuGrupos_ParticipacaoNosGrupos.put((short) 1, "Visualizar participantes");
+        opcoesMenuGrupos_ParticipacaoNosGrupos.put((short) 2, "Visualizar amigo sorteado");
+        opcoesMenuGrupos_ParticipacaoNosGrupos.put((short) 3, "Ler/enviar mensagens ao grupo");
+        opcoesMenuGrupos_ParticipacaoNosGrupos.put((short) 4, "Retornar ao menu anterior");
+
+        opcoesMenuGrupos_EnvioLeituraMensagens = new HashMap<>();
+        opcoesMenuGrupos_EnvioLeituraMensagens.put((short) 1, "Enviar mensagem");
+        opcoesMenuGrupos_EnvioLeituraMensagens.put((short) 2, "Ler mensagens");
+        opcoesMenuGrupos_EnvioLeituraMensagens.put((short) 3, "Retornar ao menu anterior");
     }
-
+    
+    //loop principal de execução do programa
     public void loopExec() throws Exception {
-        boolean exec;
+        boolean exec; //flag de teste para saber se o programa ainda está em execução
+        
         do {
+            //se o usuário está logado
             if (isLogged) {
+                
+                //recupera os convites que ele possui
                 int[] convites = listaInvertidaEmailConvite.read(usuario.chaveSecundaria());
-
+                //atualiza a quantidade a ser mostrada no menu principal
                 setQuantConvites(convites.length);
                 opcoesMenuPrincipal.remove(3);
                 opcoesMenuPrincipal.put((short) 3, "Convites: " + getQuantConvites());
             }
+            //está a linha principal que mantém o programa em execução até que exec seja false
             exec = showMenu(ultimaTela);
             clearScreen();
         } while (exec);
     }
-
+    
+    //mostra o cabeçalho da aplicação
     private void showHeader() {
         System.out.println("--------------------------");
         System.out.println(nomeAplicacao + " " + versaoAplicacao);
-        System.out.println("Desenvolvido pelo Grupo 3");
+        System.out.println("Desenvolvido por Jonathan Douglas Diego Tavares");
         System.out.println("--------------------------");
         if (isLogged) {
             System.out.println("Você está logado como " + usuario.getNome());
@@ -169,7 +222,9 @@ public class Interface {
         }
         System.out.println();
     }
-
+    
+    //responsável por determinar qual menu será mostrado em cada tela
+    //e manter a variável exec atualizada com o status de execução do programa
     public boolean showMenu(Tela menu) throws Exception {
         boolean exec;
 
@@ -181,7 +236,8 @@ public class Interface {
 
         return exec;
     }
-
+    
+    //Trecho de código que ficou obsoleto nas versões mais novas
     /*
     public boolean showMenuInicial() throws Exception {
         boolean exec;
@@ -248,8 +304,14 @@ public class Interface {
         showOpcoes(Tela.MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES);
         procOption(getOption(Tela.MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES), Tela.MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES);
     }*/
+    
+    
     /**
-     * @param menu
+     * Basicamente, realiza um switch tomando como valor de teste o conteúdo da variável
+     * menu que dirá quais opções deverão ser mostradas em função da tela que deve ser mostrada
+     * É um código padrão para todos os menus, em que a única diferença está na variável que dirá
+     * qual é o keySet
+     * @param menu 
      */
     private void showOpcoes(Tela menu) {
         switch (menu) {
@@ -301,6 +363,18 @@ public class Interface {
                     System.out.println(s + ")" + opcoesMenuGerencimentoDeGrupos_Participantes.get(s));
                 }
                 break;
+            case MENU_GRUPOS_PARTICIPACAO_NOS_GRUPOS:
+                System.out.println("INÍCIO > GRUPOS > PARTICIPAÇÃO EM GRUPO\n");
+                for (Short s : opcoesMenuGrupos_ParticipacaoNosGrupos.keySet()) {
+                    System.out.println(s + ")" + opcoesMenuGrupos_ParticipacaoNosGrupos.get(s));
+                }
+                break;
+            case MENU_GRUPOS_ENVIO_LEITURA_MENSAGENS:
+                System.out.println("INÍCIO > GRUPOS > MENSAGENS\n");
+                for (Short s : opcoesMenuGrupos_EnvioLeituraMensagens.keySet()) {
+                    System.out.println(s + ")" + opcoesMenuGrupos_EnvioLeituraMensagens.get(s));
+                }
+                break;
             default:
                 System.out.println("ERRO: Não foi possível exibir o menu desejado.");
                 break;
@@ -308,6 +382,8 @@ public class Interface {
     }
 
     /**
+     * Também baseada na variável menu e serve para validar se a entrada de opção do
+     * usuário está condizente com as opções existentes em cada menu
      * @param menu
      * @return opcao escolhida
      */
@@ -366,6 +442,19 @@ public class Interface {
                 }
                 break;
 
+            case MENU_GRUPOS_PARTICIPACAO_NOS_GRUPOS:
+                while (!opcoesMenuGrupos_ParticipacaoNosGrupos.containsKey(option)) {
+                    System.out.print("\nOpção inválida. Insira novamente: ");
+                    option = in.nextShort();
+                }
+                break;
+            case MENU_GRUPOS_ENVIO_LEITURA_MENSAGENS:
+                while (!opcoesMenuGrupos_EnvioLeituraMensagens.containsKey(option)) {
+                    System.out.print("\nOpção inválida. Insira novamente: ");
+                    option = in.nextShort();
+                }
+                break;
+
             default:
                 System.out.println("ERRO: Opção inexistente.");
                 break;
@@ -375,6 +464,8 @@ public class Interface {
     }
 
     /**
+     * Método chave responsável por dizer o que deve ser executado e qual tela deve ser exibida a cada opção
+     * escolhida pelo usuário
      * @param option
      * @param menu
      * @return
@@ -451,9 +542,12 @@ public class Interface {
                     ultimaTela = Tela.MENU_GERENCIAMENTODEGRUPOS;
                     break;
                 case 2:
-                    ultimaTela = Tela.MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES;
+                    ultimaTela = Tela.MENU_GRUPOS_PARTICIPACAO_NOS_GRUPOS;
                     break;
                 case 3:
+                    ultimaTela = Tela.MENU_GRUPOS_ENVIO_LEITURA_MENSAGENS;
+                    break;
+                case 4:
                     ultimaTela = Tela.MENU_PRINCIPAL;
                     break;
                 default:
@@ -469,8 +563,10 @@ public class Interface {
                     ultimaTela = Tela.MENU_GERENCIAMENTODEGRUPOS_CONVITES;
                     break;
                 case 3:
+                    ultimaTela = Tela.MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES;
                     break;
                 case 4:
+                    procSorteio();
                     break;
                 case 5:
                     ultimaTela = Tela.MENU_GRUPOS;
@@ -527,6 +623,38 @@ public class Interface {
                     procRemocaoParticipantes();
                     break;
                 case 3:
+                    ultimaTela = Tela.MENU_GERENCIAMENTODEGRUPOS;
+                    break;
+                default:
+                    System.out.println("ERRO: Opção inexistente.");
+                    break;
+            }
+        } else if (menu == Tela.MENU_GRUPOS_PARTICIPACAO_NOS_GRUPOS) {
+            switch (option) {
+                case 1:
+                    procVisualizarParticipantes();
+                    break;
+                case 2:
+                    procVisualizarAmigoSorteado();
+                    break;
+                case 3:
+                    break;
+                case 4:
+                    ultimaTela = Tela.MENU_GRUPOS;
+                    break;
+                default:
+                    System.out.println("ERRO: Opção inexistente.");
+                    break;
+            }
+        } else if (menu == Tela.MENU_GRUPOS_ENVIO_LEITURA_MENSAGENS) {
+            switch (option) {
+                case 1:
+                    procEnvioMensagem();
+                    break;
+                case 2:
+                    procLeituraMensagens();
+                    break;
+                case 3:
                     ultimaTela = Tela.MENU_GRUPOS;
                     break;
                 default:
@@ -536,29 +664,44 @@ public class Interface {
         }
         return true;
     }
-
+    
+    //mensagem padrão de saída
     private void showMensagemSaida() {
         System.out.println("\nObrigado por utilizar esta aplicação! Volte sempre.");
     }
-
+    
+    //Daqui em diante todas as funções proc tem relação com alguma funcionalidade
+    //em algum menu específico dentro da aplicação
+    
+    /**
+     * Processa o login do usuário na tela inicial retornando um objeto
+     * com os dados do usuário que logou no sistema
+     * @return
+     * @throws Exception 
+     */
     private Usuario procLogin() throws Exception {
         String email;
         String senha;
         Usuario us;
-
+        
+        //lê o email
         in.nextLine();
         System.out.print("\nDigite seu email: ");
         email = in.nextLine();
-
+        
+        //valida a existência do usuário com base em sua chave secundária
+        //em inválido retorna null
         if ((us = crudUsuario.read(email)) == null) {
             System.out.println("\nERRO: Não existe usuário cadastrado para o email inserido.");
             pressToContinue();
             return null;
         }
-
+        
+        //lê a senha
         System.out.print("\nDigite sua senha: ");
         senha = in.nextLine();
-
+        
+        //valida a senha e em caso inválido retorna null
         if (!us.getSenha().equals(senha)) {
             System.out.println("\nERRO: A senha inserida é inválida.");
             pressToContinue();
@@ -566,12 +709,18 @@ public class Interface {
         }
 
         System.out.println("\nLogin realizado com sucesso!\n\n\n");
-
+        
+        //diz que o usuário está logado
         setIsLogged(true);
-
+        
+        //retorna o objeto do usuário logado
         return us;
     }
-
+    
+    //Daqui em diante é seguido o passo a passo do projeto especificado no Canvas
+    //com pequenas modificações feitas a medida que eu fui achando necessário
+    
+    //Processa o cadastro de um usuário
     private void procCadastro() throws Exception {
         Usuario us;
         String email;
@@ -582,53 +731,66 @@ public class Interface {
         String confirma;
 
         in.nextLine();
+        
+        //lê email
         System.out.print("\nDigite seu email: ");
         email = in.nextLine();
-
+        
+        //valida email
         if (crudUsuario.read(email) != null || !isValidEmailAddressRegex(email)) {
             System.out.println("\nERRO: O email inserido já pertence a outro usuário ou é inválido.");
             pressToContinue();
             return;
         }
-
+        
+        //lê nome
         System.out.print("\nDigite seu nome: ");
         nome = in.nextLine();
-
+        
+        //valida o nome
         while (nome.equals("") || nome.length() < 1) {
             System.out.println("ERRO: O nome inserido é inválido. Insira novamente.");
             System.out.print("\nDigite seu nome: ");
             nome = in.nextLine();
         }
-
+        
+        //lê apelido
         System.out.print("\nDigite seu apelido: ");
         apelido = in.nextLine();
-
+        
+        //valida o apelido
         while (apelido == null || apelido.length() < 1) {
             System.out.println("ERRO: O apelido inserido é inválido. Insira novamente.");
             System.out.print("\nDigite seu apelido: ");
             apelido = in.nextLine();
         }
-
+        
+        //lê a senha
         System.out.print("\nDigite sua senha (no mínimo 5 caracteres): ");
         senha = in.nextLine();
-
+        
+        //valida a senha
         while (senha.equals("") || senha.length() < 5) {
             System.out.println("ERRO: A senha inserida é inválida. Insira novamente.");
             System.out.print("\nDigite sua senha (no mínimo 5 caracteres): ");
             senha = in.nextLine();
         }
-
+        
+        //lê o código de recuperação
         System.out.print("\nDigite seu código de recuperação de senha (no mínimo 5 caracteres): ");
         codRec = in.nextLine();
 
+        //valida o código de recuperação
         while (codRec.equals("") || codRec.length() < 5) {
             System.out.println("ERRO: O código de recuperação é inválido. Insira novamente.");
             System.out.print("\nDigite seu código de recuperação de senha (no mínimo 5 caracteres): ");
             codRec = in.nextLine();
         }
-
+        
+        //instância o novo objeto do tipo Usuario
         us = new Usuario(nome, apelido, email, senha, codRec);
-
+        
+        //solicita a confirmação da criação
         System.out.println("\nVocê confirma a criação de um usuário com estes dados? (Digite sim ou nao)\n");
         System.out.println(us);
 
@@ -651,7 +813,12 @@ public class Interface {
 
         pressToContinue();
     }
-
+    
+    /**
+     * O processo de recuperação de senha segue a mesma ideia da criação do usuário, porém ao invés
+     * de utilizar o método create utilizamos o método update para atualizar a senha para um novo valor
+     * @throws Exception 
+     */
     private void procRecSenha() throws Exception {
         String email;
         Usuario us;
@@ -689,7 +856,12 @@ public class Interface {
 
         pressToContinue();
     }
-
+    
+    /**
+     * Lista as sugestões do usuário com base na obtenção das sugestões através
+     * do índice de relacionamento que conecta a sugestão ao usuário
+     * @throws Exception 
+     */
     private void procListagemSugestoes() throws Exception {
         int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
 
@@ -709,7 +881,12 @@ public class Interface {
 
         pressToContinue();
     }
-
+    
+    /**
+     * Cadastra uma sugestão seguindo o mesmo processo dos outros métodos de cadastro
+     * com alguma diferença no uso dos índices
+     * @throws Exception 
+     */
     private void procCadastroSugestao() throws Exception {
         Sugestao sg;
         String produto, loja, observacoes;
@@ -777,7 +954,12 @@ public class Interface {
             pressToContinue();
         }
     }
-
+    
+    /**
+     * Segue o modelo padrão apresentado para alteração de registros e no final realiza
+     * um update através do CRUD
+     * @throws Exception 
+     */
     private void procAlteracaoSugestao() throws Exception {
         int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
         String sgEscolhida;
@@ -881,7 +1063,7 @@ public class Interface {
         }
         pressToContinue();
     }
-
+    
     private void procExclusaoSugestao() throws Exception {
         int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
         String sgEscolhida;
@@ -949,12 +1131,13 @@ public class Interface {
 
     private void procListagemGrupos() throws Exception {
         int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
+        int[] participacoes = indiceRelacionamentoUsuarioParticipacao.read(usuario.getId());
 
         in.nextLine();
         clearScreen();
 
         if (listaIdGrupos.length != 0) {
-            System.out.println("Meus grupos: \n");
+            System.out.println("Meus grupos (criados por mim): \n");
             int contador = 1;
             for (int i = 0; i < listaIdGrupos.length; i++) {
                 Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
@@ -966,14 +1149,30 @@ public class Interface {
                 }
             }
         } else {
-            System.out.println("Você não possui grupos cadastrados.");
+            System.out.println("Você não possui grupos cadastrados que foram criados por você.\n\n");
+        }
+
+        if (participacoes.length != 0) {
+            System.out.println("Meus grupos (dos quais eu participo): \n");
+            int contador = 1;
+            for (int i = 0; i < participacoes.length; i++) {
+                Grupo grupo = crudGrupos.read(crudParticipacao.read(participacoes[i]).getIdGrupo());
+                if (grupo.isAtivo()) {
+                    System.out.print((contador) + ". ");
+                    System.out.println(grupo);
+                    System.out.println();
+                    contador++;
+                }
+            }
+        } else {
+            System.out.println("Você não possui grupos dos quais participa.");
         }
 
         pressToContinue();
     }
 
     private void procCadastroGrupo() throws Exception {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
         DateTimeZone timeZone = DateTimeZone.forID("America/Sao_Paulo");
         DateTime dateTimeSorteio, dateTimeEncontro;
         Grupo grp;
@@ -983,6 +1182,7 @@ public class Interface {
         float valor;
         long momentoEncontro;
         String confirma;
+        String confirmaPart;
         int anoAtual = DateTime.now().year().get();
         int maiorMesPossivel = DateTime.now().monthOfYear().getMaximumValue();
 
@@ -1044,7 +1244,7 @@ public class Interface {
             dateTimeSorteio = formatter.withZone(timeZone).parseDateTime(dataSorteio);
             momentoSorteio = dateTimeSorteio.getMillis();
 
-            while (momentoSorteio < DateTime.now().getMillis()) {
+            while (dateTimeSorteio.isBeforeNow()) {
                 System.out.println("Data do sorteio inferior a data atual. Insira a data do sorteio novamente.\n");
                 System.out.println("\nDigite a data do sorteio: ");
                 System.out.print("Dia: ");
@@ -1259,15 +1459,15 @@ public class Interface {
                 System.out.println("\nVocê deseja participar do grupo? (Digite sim ou nao)\n");
 
                 System.out.print("\nConfirma: ");
-                confirma = in.nextLine();
+                confirmaPart = in.nextLine();
 
-                while ((!confirma.equals("sim")) && (!confirma.equals("nao"))) {
+                while ((!confirmaPart.equals("sim")) && (!confirmaPart.equals("nao"))) {
                     System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
                     System.out.print("Confirma: ");
-                    confirma = in.nextLine();
+                    confirmaPart = in.nextLine();
                 }
 
-                if (confirma.equals("sim")) {
+                if (confirmaPart.equals("sim")) {
                     Participacao participacao = new Participacao();
                     participacao.setIdGrupo(grp.getId());
                     participacao.setIdUsuario(usuario.getId());
@@ -1275,8 +1475,6 @@ public class Interface {
                     indiceRelacionamentoGrupoParticipacao.create(id, idParticipacao);
                     indiceRelacionamentoUsuarioParticipacao.create(usuario.getId(), idParticipacao);
                 }
-
-                System.out.println("\nGrupo cadastrado com sucesso");
             }
 
             if (confirma.equals("nao")) {
@@ -1288,7 +1486,7 @@ public class Interface {
     }
 
     private void procAlteracaoGrupo() throws Exception {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
         DateTimeZone timeZone = DateTimeZone.forID("America/Sao_Paulo");
         DateTime dateTimeSorteio, dateTimeEncontro;
         int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
@@ -1303,6 +1501,7 @@ public class Interface {
         int alterado = 0;
         int anoAtual = DateTime.now().year().get();
         int maiorMesPossivel = DateTime.now().monthOfYear().getMaximumValue();
+        int quantidadeDeGruposValidos = 0;
 
         in.nextLine();
         clearScreen();
@@ -1319,6 +1518,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposValidos++;
                 }
             }
 
@@ -1328,7 +1528,7 @@ public class Interface {
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > listaIdGrupos.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposValidos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual grupo deseja alterar: ");
                     grpEscolhido = in.nextLine();
@@ -1640,6 +1840,7 @@ public class Interface {
         String grpEscolhido;
         Grupo escolhido;
         String confirma;
+        int quantidadeDeGruposAtivos = 0;
 
         in.nextLine();
         clearScreen();
@@ -1656,6 +1857,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposAtivos++;
                 }
             }
 
@@ -1665,7 +1867,7 @@ public class Interface {
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > listaIdGrupos.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual grupo deseja alterar: ");
                     grpEscolhido = in.nextLine();
@@ -1693,6 +1895,7 @@ public class Interface {
                 }
 
                 if (confirma.equals("sim")) {
+                    
                     escolhido.setAtivo(false);
                     crudGrupos.update(escolhido);
                     System.out.println("\nGrupo desativado com sucesso.");
@@ -1714,6 +1917,7 @@ public class Interface {
         int[] listaIdConvites;
         String grpEscolhido;
         Grupo escolhido;
+        int quantidadeDeGruposAtivos = 0;
 
         in.nextLine();
         clearScreen();
@@ -1730,6 +1934,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposAtivos++;
                 }
             }
 
@@ -1739,7 +1944,7 @@ public class Interface {
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > listaIdGrupos.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual grupo deseja visualizar os convites: ");
                     grpEscolhido = in.nextLine();
@@ -1749,7 +1954,7 @@ public class Interface {
                     return;
                 }
 
-                escolhido = crudGrupos.read(listaIdGrupos[Integer.parseInt(grpEscolhido)]);
+                escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
 
                 System.out.println("\n\nCONVITES DO GRUPO " + '"' + escolhido.getNome() + '"' + "\n");
 
@@ -1777,6 +1982,7 @@ public class Interface {
 
         String grpEscolhido, email, confirma;
         Grupo escolhido;
+        int quantidadeDeGruposAtivos = 0;
 
         in.nextLine();
         clearScreen();
@@ -1793,6 +1999,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposAtivos++;
                 }
             }
 
@@ -1802,7 +2009,7 @@ public class Interface {
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > listaIdGrupos.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual grupo deseja visualizar os convites: ");
                     grpEscolhido = in.nextLine();
@@ -1825,7 +2032,7 @@ public class Interface {
                         if (cv.getEstado() == 0 || cv.getEstado() == 1) {
                             clearScreen();
                             System.out.println(cv);
-                                    
+
                             System.out.println("\n\nConvite já emitido para este usuário.\n");
                         } else if (cv.getEstado() == 2 || cv.getEstado() == 3) {
                             clearScreen();
@@ -1877,6 +2084,8 @@ public class Interface {
         String grpEscolhido, email, confirma, cvEscolhido;
         Grupo escolhido;
         Convite conviteEscolhido;
+        int quantidadeDeGruposAtivos = 0;
+        int quantidadeDeConvitesPendetes = 0;
 
         in.nextLine();
         clearScreen();
@@ -1893,6 +2102,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposAtivos++;
                 }
             }
 
@@ -1902,7 +2112,7 @@ public class Interface {
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > listaIdGrupos.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual grupo deseja visualizar os convites: ");
                     grpEscolhido = in.nextLine();
@@ -1927,6 +2137,7 @@ public class Interface {
                         System.out.println(convite);
                         vetorId[contador] = convite.getId();
                         contador++;
+                        quantidadeDeConvitesPendetes++;
                     }
                 }
 
@@ -1936,7 +2147,7 @@ public class Interface {
                 if (cvEscolhido.equals("0")) {
 
                 } else {
-                    while (cvEscolhido.equals("") || (Integer.parseInt(cvEscolhido) < 0 || Integer.parseInt(cvEscolhido) > listaIdConvites.length)) {
+                    while (cvEscolhido.equals("") || (Integer.parseInt(cvEscolhido) < 0 || Integer.parseInt(cvEscolhido) > quantidadeDeConvitesPendetes)) {
                         System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                         System.out.print("\nQual convite deseja cancelar: ");
                         cvEscolhido = in.nextLine();
@@ -1983,6 +2194,7 @@ public class Interface {
         int[] listaIdConvites;
         Convite conviteEscolhido;
         String cvEscolhido, confirma;
+        int quantidadeDeConvitesPendentes = 0;
 
         listaIdConvites = listaInvertidaEmailConvite.read(usuario.chaveSecundaria());
 
@@ -2007,6 +2219,7 @@ public class Interface {
                     System.out.println();
                     vetorId[contador] = cv.getId();
                     contador++;
+                    quantidadeDeConvitesPendentes++;
                 } else {
                     listaInvertidaEmailConvite.delete(cv.chaveSecundaria(), cv.getId());
                 }
@@ -2017,7 +2230,7 @@ public class Interface {
 
             while (!cvEscolhido.equals("0")) {
 
-                while (cvEscolhido.equals("") || (Integer.parseInt(cvEscolhido) < 0 || Integer.parseInt(cvEscolhido) > listaIdConvites.length)) {
+                while (cvEscolhido.equals("") || (Integer.parseInt(cvEscolhido) < 0 || Integer.parseInt(cvEscolhido) > quantidadeDeConvitesPendentes)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
                     System.out.print("\nQual convite deseja cancelar: ");
                     cvEscolhido = in.nextLine();
@@ -2069,6 +2282,7 @@ public class Interface {
                 }
 
                 contador = 1;
+                quantidadeDeConvitesPendentes = 0;
                 vetorId = new int[listaIdConvites.length + 1];
                 System.out.println("\n\nMeus convites: \n");
                 for (int i = 0; i < listaIdConvites.length; i++) {
@@ -2085,11 +2299,12 @@ public class Interface {
                         System.out.println();
                         vetorId[contador] = cv.getId();
                         contador++;
+                        quantidadeDeConvitesPendentes++;
                     } else {
                         listaInvertidaEmailConvite.delete(cv.chaveSecundaria(), cv.getId());
                     }
                 }
-                
+
                 listaIdConvites = listaInvertidaEmailConvite.read(usuario.chaveSecundaria());
                 if (listaIdConvites.length == 0) {
                     System.out.println("\n\nVocê não possui mais convites pendentes.\n\n");
@@ -2105,42 +2320,41 @@ public class Interface {
     }
 
     private void procListagemParticipantes() throws Exception {
-        int[] participacoes = indiceRelacionamentoUsuarioParticipacao.read(usuario.getId());
+        int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
         int[] listaIdParticipacoes;
         String grpEscolhido;
         Grupo escolhido;
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
+        int quantidadeDeGruposAtivos = 0;
 
         in.nextLine();
         clearScreen();
 
-        if (participacoes.length != 0) {
-            System.out.println("Meus grupos: \n");
+        if (listaIdGrupos.length != 0) {
+            System.out.println("Meus grupos (dos quais eu sou dono): \n");
             int contador = 1;
-            int[] vetorId = new int[participacoes.length + 1];
-            for (int i = 0; i < participacoes.length; i++) {
-                Grupo grupo = crudGrupos.read(crudParticipacao.read(participacoes[i]).getIdGrupo());
+            int[] vetorId = new int[listaIdGrupos.length + 1];
+            for (int i = 0; i < listaIdGrupos.length; i++) {
+                Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
                 if (grupo.isAtivo()) {
                     System.out.print((contador) + ". ");
                     System.out.println(grupo);
-
-                    System.out.println("Sorteio: " + (grupo.isSorteado() ? "Já sorteado em " + formatter.print(grupo.getMomentoSorteio())
-                            : "Terá sorteio em " + formatter.print(grupo.getMomentoSorteio())));
                     System.out.println();
                     vetorId[contador] = grupo.getId();
                     contador++;
+                    quantidadeDeGruposAtivos++;
                 }
             }
 
-            System.out.print("Qual grupo deseja gerenciar: ");
+            System.out.print("Qual grupo deseja visualizar: ");
             grpEscolhido = in.nextLine();
 
             if (grpEscolhido.equals("0")) {
 
             } else {
-                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > participacoes.length)) {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
                     System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
-                    System.out.print("\nQual grupo deseja visualizar os convites: ");
+                    System.out.print("\nQual grupo deseja visualizar: ");
                     grpEscolhido = in.nextLine();
                 }
 
@@ -2163,14 +2377,805 @@ public class Interface {
                 }
             }
         } else {
+            System.out.println("Você não possui grupos dos quais você é dono.");
+        }
+
+        pressToContinue();
+    }
+
+    private void procRemocaoParticipantes() throws Exception {
+        int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
+        int[] listaIdParticipacoes;
+        String grpEscolhido;
+        Grupo escolhido;
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
+        HashMap<Integer, Integer> presenteadosPor = new HashMap<>();
+        int quantidadeDeGruposAtivos = 0;
+        String partEscolhida;
+        Participacao escolhida;
+
+        in.nextLine();
+        clearScreen();
+
+        if (listaIdGrupos.length != 0) {
+            System.out.println("Meus grupos: \n");
+            int contador = 1;
+            int[] vetorId = new int[listaIdGrupos.length + 1];
+            for (int i = 0; i < listaIdGrupos.length; i++) {
+                Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
+                if (grupo.isAtivo()) {
+                    System.out.print((contador) + ". ");
+                    System.out.println(grupo);
+                    System.out.println();
+                    vetorId[contador] = grupo.getId();
+                    contador++;
+                    quantidadeDeGruposAtivos++;
+                }
+            }
+
+            System.out.print("Qual grupo deseja gerenciar: ");
+            grpEscolhido = in.nextLine();
+
+            if (grpEscolhido.equals("0")) {
+
+            } else {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
+                    System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                    System.out.print("\nQual grupo deseja visualizar os convites: ");
+                    grpEscolhido = in.nextLine();
+                }
+
+                if (grpEscolhido.equals("0")) {
+                    return;
+                }
+
+                escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
+                listaIdParticipacoes = indiceRelacionamentoGrupoParticipacao.read(escolhido.getId());
+
+                System.out.println("\n\nParticipantes do grupo " + '"' + escolhido.getNome() + '"' + ":\n");
+
+                contador = 1;
+                vetorId = new int[listaIdParticipacoes.length + 1];
+
+                for (int i = 0; i < listaIdParticipacoes.length; i++) {
+                    Participacao participacao = crudParticipacao.read(listaIdParticipacoes[i]);
+                    System.out.print((contador) + ". ");
+                    System.out.println(crudUsuario.read(participacao.getIdUsuario()).getNome());
+                    System.out.println();
+                    vetorId[contador] = participacao.getId();
+
+                    if (escolhido.isSorteado()) {
+                        presenteadosPor.put(participacao.getIdAmigo(), participacao.getId());
+                    }
+                    contador++;
+                }
+
+                System.out.print("Quem você deseja remover: ");
+                partEscolhida = in.nextLine();
+
+                if (partEscolhida.equals("0")) {
+
+                } else {
+                    while (partEscolhida.equals("") || (Integer.parseInt(partEscolhida) < 0 || Integer.parseInt(partEscolhida) > listaIdParticipacoes.length)) {
+                        System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                        System.out.print("\nQuem você deseja remover: ");
+                        partEscolhida = in.nextLine();
+                    }
+
+                    if (partEscolhida.equals("0")) {
+                        return;
+                    }
+
+                    escolhida = crudParticipacao.read(vetorId[Integer.parseInt(partEscolhida)]);
+
+                    if (escolhido.isSorteado()) {
+                        int idUsuarioASerPresenteado = escolhida.getIdAmigo();
+                        int idPartPresenteadorDoRemovido = presenteadosPor.get(escolhida.getIdUsuario());
+                        Participacao aSerAtualizada = crudParticipacao.read(idPartPresenteadorDoRemovido);
+                        aSerAtualizada.setIdAmigo(idUsuarioASerPresenteado);
+                        crudParticipacao.update(aSerAtualizada);
+                        System.out.println("\n\nFoi realizado um ajuste no amigo oculto para que ninguem ficasse sem presente.");
+                    }
+
+                    crudParticipacao.delete(escolhida.getId());
+                    indiceRelacionamentoGrupoParticipacao.delete(escolhido.getId(), escolhida.getId());
+                    indiceRelacionamentoUsuarioParticipacao.delete(escolhida.getIdUsuario(), escolhida.getId());
+
+                    System.out.println("\n\nParticipante removido com sucesso!\n\n");
+                }
+            }
+        } else {
             System.out.println("Você não possui grupos cadastrados.");
         }
         pressToContinue();
     }
 
-    private void procRemocaoParticipantes() {
+    private Grupo escolherGrupo(boolean clearBuffer) throws Exception {
+        int[] participacoes = indiceRelacionamentoUsuarioParticipacao.read(usuario.getId());
+        String grpEscolhido;
+        Grupo escolhido = null;
+        int quantidadeDeGruposAtivos = 0;
+
+        if (clearBuffer) {
+            in.nextLine();
+            clearScreen();
+        }
+
+        if (participacoes.length != 0) {
+            System.out.println("\n\nMeus grupos (dos quais eu participo): \n");
+            int contador = 1;
+            int[] vetorId = new int[participacoes.length + 1];
+            for (int i = 0; i < participacoes.length; i++) {
+                Grupo grupo = crudGrupos.read(crudParticipacao.read(participacoes[i]).getIdGrupo());
+                if (grupo.isAtivo()) {
+                    System.out.print((contador) + ". ");
+                    System.out.println(grupo);
+                    System.out.println();
+                    vetorId[contador] = grupo.getId();
+                    contador++;
+                    quantidadeDeGruposAtivos++;
+                }
+            }
+
+            System.out.print("Qual grupo deseja escolher: ");
+            grpEscolhido = in.nextLine();
+
+            if (grpEscolhido.equals("0")) {
+
+            } else {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposAtivos)) {
+                    System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                    System.out.print("\nQual grupo deseja escolher: ");
+                    grpEscolhido = in.nextLine();
+                }
+
+                if (grpEscolhido.equals("0")) {
+                    return null;
+                }
+
+                escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
+            }
+        } else {
+            System.out.println("Você não possui grupos dos quais participa.");
+        }
+
+        return escolhido;
     }
 
+    private void procVisualizarParticipantes() throws Exception {
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
+        Grupo escolhido = escolherGrupo(true);
+        int contador = 1;
+        int[] listaIdParticipacoes;
+
+        if (escolhido != null) {
+            System.out.println("\n\n" + escolhido);
+
+            listaIdParticipacoes = indiceRelacionamentoGrupoParticipacao.read(escolhido.getId());
+
+            System.out.println("\n\nParticipantes do grupo " + '"' + escolhido.getNome() + '"' + ":\n");
+
+            for (int i = 0; i < listaIdParticipacoes.length; i++) {
+                Participacao participacao = crudParticipacao.read(listaIdParticipacoes[i]);
+                System.out.print((contador) + ". ");
+                System.out.println(crudUsuario.read(participacao.getIdUsuario()).getNome());
+                System.out.println();
+                contador++;
+            }
+        }
+
+        pressToContinue();
+    }
+
+    private void procVisualizarAmigoSorteado() throws Exception {
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
+        Grupo escolhido = escolherGrupo(true);
+
+        if (escolhido != null) {
+            System.out.println("\n\n" + escolhido);
+
+            if (escolhido.isSorteado()) {
+                String chaveSecundaria = usuario.getId() + "|" + escolhido.getId();
+                Participacao participacao = crudParticipacao.read(chaveSecundaria);
+                Usuario amigoSorteado = crudUsuario.read(participacao.getIdAmigo());
+                Sugestao sugestoes = crudSugestao.read(amigoSorteado.getId());
+
+                System.out.println("\n\nO amigo que você deve presentear é: \n");
+                System.out.println("Nome: " + amigoSorteado.getNome());
+                int[] listaIdSugestoes = indiceRelacionamentoSugestaoUsuario.read(usuario.getId());
+
+                if (listaIdSugestoes.length != 0) {
+                    System.out.println("Sugestões: \n");
+                    for (int i = 0; i < listaIdSugestoes.length; i++) {
+                        System.out.print((i + 1) + ". ");
+                        System.out.println(crudSugestao.read(listaIdSugestoes[i]));
+                        System.out.println();
+                    }
+                } else {
+                    System.out.println("O seu amigo não possui sugestões cadastradas.");
+                }
+            } else {
+                System.out.println("\n\nSorteio ainda não realizado neste grupo.\n\n");
+            }
+        }
+
+        pressToContinue();
+    }
+
+    private void procSorteio() throws Exception {
+        int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
+        int[] listaIdParticipacoes;
+        String grpEscolhido;
+        Grupo escolhido;
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm");
+        int quantidadeDeGruposValidos = 0;
+        long dataAtual = DateTime.now().getMillis();
+        Participacao us1;
+        Participacao us2;
+
+        in.nextLine();
+        clearScreen();
+
+        if (listaIdGrupos.length != 0) {
+            System.out.println("Meus grupos (dos quais eu sou dono): \n");
+            int contador = 1;
+            int[] vetorId = new int[listaIdGrupos.length + 1];
+            for (int i = 0; i < listaIdGrupos.length; i++) {
+                Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
+                if (grupo.isAtivo() && !grupo.isSorteado() && (grupo.getMomentoSorteio() < dataAtual)) {
+                    System.out.print((contador) + ". ");
+                    System.out.println(grupo);
+
+                    System.out.println();
+                    vetorId[contador] = grupo.getId();
+                    contador++;
+                    quantidadeDeGruposValidos++;
+                }
+            }
+
+            System.out.print("Qual grupo deseja realizar o sorteio: ");
+            grpEscolhido = in.nextLine();
+
+            if (grpEscolhido.equals("0")) {
+
+            } else {
+                while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposValidos)) {
+                    System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                    System.out.print("\nQual grupo deseja realizar o sorteio: ");
+                    grpEscolhido = in.nextLine();
+                }
+
+                if (grpEscolhido.equals("0")) {
+                    return;
+                }
+
+                escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
+
+                System.out.println("\n\nO grupo escolhido para realizar o sorteio é:\n");
+                System.out.println(escolhido);
+
+                System.out.println("Sorteio: " + (escolhido.isSorteado() ? "Já sorteado em " + formatter.print(escolhido.getMomentoSorteio())
+                        : "Terá sorteio em " + formatter.print(escolhido.getMomentoSorteio())));
+
+                listaIdParticipacoes = indiceRelacionamentoGrupoParticipacao.read(escolhido.getId());
+
+                shuffleArray(listaIdParticipacoes);
+
+                System.out.println("\n\nParticipantes do grupo " + '"' + escolhido.getNome() + '"' + ":\n");
+
+                for (int i = 0; i < listaIdParticipacoes.length; i++) {
+                    if (i == listaIdParticipacoes.length - 1) {
+                        us1 = crudParticipacao.read(listaIdParticipacoes[i]);
+                        us2 = crudParticipacao.read(listaIdParticipacoes[0]);
+
+                        us1.setIdAmigo(us2.getIdUsuario());
+                    } else {
+                        us1 = crudParticipacao.read(listaIdParticipacoes[i]);
+                        us2 = crudParticipacao.read(listaIdParticipacoes[i + 1]);
+
+                        us1.setIdAmigo(us2.getIdUsuario());
+                    }
+
+                    crudParticipacao.update(us1);
+                }
+
+                escolhido.setSorteado(true);
+                crudGrupos.update(escolhido);
+
+                System.out.println("\n\nSorteio realizado com sucesso!");
+            }
+        } else {
+            System.out.println("Você não possui grupos dos quais você é dono.");
+        }
+
+        pressToContinue();
+    }
+
+    private void procEnvioMensagem() throws Exception {
+        int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
+        String grpEscolhido;
+        Grupo escolhido;
+        int quantidadeDeGruposValidos = 0;
+        String mensagem, titulo;
+        String donoOuPart;
+
+        in.nextLine();
+        clearScreen();
+
+        System.out.println("Digite 1 para visualizar os grupos que você criou e 2 para visualizar os grupos que você participa:");
+        donoOuPart = in.nextLine();
+
+        while ((!donoOuPart.equals("1")) && (!donoOuPart.equals("2"))) {
+            System.out.println("\nERRO: Opção inválida. Digite 1 ou 2.");
+            System.out.print("Confirma: ");
+            donoOuPart = in.nextLine();
+        }
+
+        if (donoOuPart.equals("1")) {
+            if (listaIdGrupos.length != 0) {
+                System.out.println("Meus grupos (dos quais eu criei): \n");
+                int contador = 1;
+                int[] vetorId = new int[listaIdGrupos.length + 1];
+                for (int i = 0; i < listaIdGrupos.length; i++) {
+                    Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
+                    if (grupo.isAtivo()) {
+                        System.out.print((contador) + ". ");
+                        System.out.println(grupo);
+
+                        System.out.println();
+                        vetorId[contador] = grupo.getId();
+                        contador++;
+                        quantidadeDeGruposValidos++;
+                    }
+                }
+
+                System.out.print("Qual grupo deseja enviar a mensagem: ");
+                grpEscolhido = in.nextLine();
+
+                if (grpEscolhido.equals("0")) {
+
+                } else {
+                    while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposValidos)) {
+                        System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                        System.out.print("\nQual grupo deseja visualizar os convites: ");
+                        grpEscolhido = in.nextLine();
+                    }
+
+                    if (grpEscolhido.equals("0")) {
+                        return;
+                    }
+
+                    escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
+
+                    System.out.println("\n\nO grupo escolhido para enviar a mensagem é:\n");
+                    System.out.println(escolhido);
+
+                    System.out.println("\n\nEscreva o título da mensagem:");
+                    titulo = in.nextLine();
+
+                    while (titulo.isEmpty()) {
+                        System.out.println("\nERRO: Você escreveu um título inválido. Insira novamente.");
+                        titulo = in.nextLine();
+                    }
+
+                    System.out.println("\n\nEscreva a sua mensagem:");
+                    mensagem = in.nextLine();
+
+                    while (mensagem.isEmpty()) {
+                        System.out.println("\nERRO: Você escreveu uma mensagem inválida. Insira novamente.");
+                        mensagem = in.nextLine();
+                    }
+
+                    Mensagem mensagemEnviada = new Mensagem(DateTime.now().getMillis(), mensagem, titulo);
+
+                    mensagemEnviada.setIdGrupo(escolhido.getId());
+                    mensagemEnviada.setIdUsuario(usuario.getId());
+
+                    int idMensagemEnviada = crudMensagens.create(mensagemEnviada);
+
+                    indiceRelacionamentoGrupoMensagem.create(escolhido.getId(), idMensagemEnviada);
+                    indiceRelacionamentoUsuarioMensagem.create(usuario.getId(), idMensagemEnviada);
+
+                    System.out.println("\n\nMensagem enviada com sucesso!");
+                }
+            } else {
+                System.out.println("Você não possui grupos dos quais você é dono.");
+            }
+        }
+
+        if (donoOuPart.equals("2")) {
+            Grupo grupo = escolherGrupo(false);
+
+            if (grupo != null) {
+                System.out.println("\n\nO grupo escolhido para enviar a mensagem é:\n");
+                System.out.println(grupo);
+
+                System.out.println("\n\nEscreva o título da mensagem:");
+                titulo = in.nextLine();
+
+                while (titulo.isEmpty()) {
+                    System.out.println("\nERRO: Você escreveu um título inválido. Insira novamente.");
+                    titulo = in.nextLine();
+                }
+
+                System.out.println("\n\nEscreva a sua mensagem:");
+                mensagem = in.nextLine();
+
+                while (mensagem.isEmpty()) {
+                    System.out.println("\nERRO: Você escreveu uma mensagem inválida. Insira novamente.");
+                    mensagem = in.nextLine();
+                }
+
+                Mensagem mensagemEnviada = new Mensagem(DateTime.now().getMillis(), mensagem, titulo);
+
+                mensagemEnviada.setIdGrupo(grupo.getId());
+                mensagemEnviada.setIdUsuario(usuario.getId());
+
+                int idMensagemEnviada = crudMensagens.create(mensagemEnviada);
+
+                indiceRelacionamentoGrupoMensagem.create(grupo.getId(), idMensagemEnviada);
+                indiceRelacionamentoUsuarioMensagem.create(usuario.getId(), idMensagemEnviada);
+
+                System.out.println("\n\nMensagem enviada com sucesso!");
+            }
+        }
+
+        pressToContinue();
+    }
+
+    private void procLeituraMensagens() throws Exception {
+        int[] listaIdGrupos = indiceRelacionamentoGrupoUsuario.read(usuario.getId());
+        String grpEscolhido;
+        String msgEscolhida;
+        Grupo escolhido;
+        int quantidadeDeGruposValidos = 0; //variável de controle para seleção do grupo desejado
+        String donoOuPart; //diz se o usuário quer ver os grupos que foram criados por ele ou só os que ele participa
+        ArrayList<Mensagem> mensagens = new ArrayList<>();
+        String mudarPagina; //variável de controle da mudança de página
+        int posicaoArray = 0; //variável auxiliar do processo de visualização das mensagens selecionadas
+        
+        //clear buffer
+        in.nextLine();
+        clearScreen();
+        
+        //aqui utilizamos a estratégia de dar ao usuário a opção de visualizar tanto as mensagens dos grupos que ele criou
+        //quanto os grupos que ele participa, podendo haver coincidência em alguns casos
+        System.out.println("Digite 1 para visualizar os grupos que você criou e 2 para visualizar os grupos que você participa:");
+        donoOuPart = in.nextLine();
+
+        while ((!donoOuPart.equals("1")) && (!donoOuPart.equals("2"))) {
+            System.out.println("\nERRO: Opção inválida. Digite 1 ou 2.");
+            System.out.print("Confirma: ");
+            donoOuPart = in.nextLine();
+        }
+
+        if (donoOuPart.equals("1")) {
+            if (listaIdGrupos.length != 0) {
+                System.out.println("\n\nMeus grupos (dos quais eu criei): \n");
+                int contador = 1;
+                int[] vetorId = new int[listaIdGrupos.length + 1];
+                for (int i = 0; i < listaIdGrupos.length; i++) {
+                    Grupo grupo = crudGrupos.read(listaIdGrupos[i]);
+                    if (grupo.isAtivo()) {
+                        System.out.print((contador) + ". ");
+                        System.out.println(grupo);
+
+                        System.out.println();
+                        vetorId[contador] = grupo.getId();
+                        contador++;
+                        quantidadeDeGruposValidos++;
+                    }
+                }
+
+                System.out.print("\n\nQual grupo deseja visualizar as mensagens: ");
+                grpEscolhido = in.nextLine();
+
+                if (grpEscolhido.equals("0")) {
+
+                } else {
+                    while (grpEscolhido.equals("") || (Integer.parseInt(grpEscolhido) < 0 || Integer.parseInt(grpEscolhido) > quantidadeDeGruposValidos)) {
+                        System.out.println("ERRO: Você fez uma escolha inválida. Insira novamente.");
+                        System.out.print("\nQual grupo deseja visualizar os convites: ");
+                        grpEscolhido = in.nextLine();
+                    }
+
+                    if (grpEscolhido.equals("0")) {
+                        return;
+                    }
+
+                    escolhido = crudGrupos.read(vetorId[Integer.parseInt(grpEscolhido)]);
+
+                    System.out.println("\n\nO grupo escolhido para visualizar as mensagens é:\n");
+                    System.out.println(escolhido);
+
+                    int[] listaIdMensagens = indiceRelacionamentoGrupoMensagem.read(escolhido.getId());
+
+                    if (listaIdMensagens.length == 0) {
+                        System.out.println("\n\nNão há mensagens neste grupo!\n\n");
+                        pressToContinue();
+                        return;
+                    }
+
+                    for (int i = 0; i < listaIdMensagens.length; i++) {
+                        mensagens.add(crudMensagens.read(listaIdMensagens[i]));
+                    }
+
+                    Collections.sort(mensagens, comparing(Mensagem::getMomentoEnvio));
+                    Collections.reverse(mensagens);
+
+                    clearScreen();
+                    System.out.println("Mensagens:\n");
+                    if (mensagens.size() >= 5) {
+                        for (int i = posicaoArray; i < 5; i++) {
+                            System.out.print((i + 1) + ". ");
+                            System.out.print(mensagens.get(i));
+                            System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                            System.out.println();
+                        }
+
+                        System.out.print("\n\nQual mensagem deseja visualizar: ");
+                        msgEscolhida = in.nextLine();
+
+                        if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > 5)) {
+                            System.out.println("\n\nMensagem:");
+                            System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                        } else {
+                            System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                        }
+                    } else {
+                        for (int i = posicaoArray; i < mensagens.size(); i++) {
+                            System.out.print((i + 1) + ". ");
+                            System.out.print(mensagens.get(i));
+                            System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                            System.out.println();
+                        }
+
+                        System.out.print("\n\nQual mensagem deseja visualizar: ");
+                        msgEscolhida = in.nextLine();
+
+                        if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                            System.out.println("\n\nMensagem:");
+                            System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                        } else {
+                            System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                        }
+                    }
+
+                    if (mensagens.size() > 5 && !msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                        System.out.println("\n\nDeseja mudar de página? (Digite sim ou nao)\n");
+                        System.out.print("Confirma: ");
+                        mudarPagina = in.nextLine();
+
+                        while ((!mudarPagina.equals("sim")) && (!mudarPagina.equals("nao"))) {
+                            System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                            System.out.print("Confirma: ");
+                            mudarPagina = in.nextLine();
+                        }
+
+                        if (mudarPagina.equals("sim")) {
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                        }
+                    }
+
+                    while (!msgEscolhida.equals("0")) {
+                        System.out.println("\n\nMensagens:\n");
+                        if (mensagens.size() >= 5) {
+                            for (int i = posicaoArray; i < 5; i++) {
+                                System.out.print((i + 1) + ". ");
+                                System.out.print(mensagens.get(i));
+                                System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                                System.out.println();
+                            }
+
+                            System.out.print("\n\nQual mensagem deseja visualizar: ");
+                            msgEscolhida = in.nextLine();
+
+                            if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > 5)) {
+                                System.out.println("\n\nMensagem:");
+                                System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                            }
+                        } else {
+                            for (int i = posicaoArray; i < mensagens.size(); i++) {
+                                System.out.print((i + 1) + ". ");
+                                System.out.print(mensagens.get(i));
+                                System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                                System.out.println();
+                            }
+
+                            System.out.print("\n\nQual mensagem deseja visualizar: ");
+                            msgEscolhida = in.nextLine();
+
+                            if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                                System.out.println("\n\nMensagem:");
+                                System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                            } else {
+                                System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                            }
+                        }
+
+                        if (mensagens.size() > 5 && !msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                            System.out.println("\n\nDeseja mudar de página? (Digite sim ou nao)\n");
+                            System.out.print("Confirma: ");
+                            mudarPagina = in.nextLine();
+
+                            while ((!mudarPagina.equals("sim")) && (!mudarPagina.equals("nao"))) {
+                                System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                                System.out.print("Confirma: ");
+                                mudarPagina = in.nextLine();
+                            }
+
+                            if (mudarPagina.equals("sim")) {
+                                mensagens.remove(0);
+                                mensagens.remove(0);
+                                mensagens.remove(0);
+                                mensagens.remove(0);
+                                mensagens.remove(0);
+                            }
+                        }
+                    }
+                }
+            } else {
+                System.out.println("Você não possui grupos dos quais você é dono.");
+            }
+        }
+
+        if (donoOuPart.equals("2")) {
+            Grupo grupo = escolherGrupo(false);
+
+            if (grupo != null) {
+                System.out.println("\n\nO grupo escolhido para visualizar as mensagens é:\n");
+                System.out.println(grupo);
+
+                int[] listaIdMensagens = indiceRelacionamentoGrupoMensagem.read(grupo.getId());
+
+                if (listaIdMensagens.length == 0) {
+                    System.out.println("\n\nNão há mensagens neste grupo!\n\n");
+                    pressToContinue();
+                    return;
+                }
+
+                for (int i = 0; i < listaIdMensagens.length; i++) {
+                    mensagens.add(crudMensagens.read(listaIdMensagens[i]));
+                }
+
+                Collections.sort(mensagens, comparing(Mensagem::getMomentoEnvio));
+                Collections.reverse(mensagens);
+
+                clearScreen();
+                System.out.println("Mensagens:\n");
+                if (mensagens.size() >= 5) {
+                    for (int i = posicaoArray; i < 5; i++) {
+                        System.out.print((i + 1) + ". ");
+                        System.out.print(mensagens.get(i));
+                        System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                        System.out.println();
+                    }
+
+                    System.out.print("\n\nQual mensagem deseja visualizar: ");
+                    msgEscolhida = in.nextLine();
+
+                    if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > 5)) {
+                        System.out.println("\n\nMensagem:");
+                        System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                    } else {
+                        System.out.println("\n\nERRO: Você escolheu uma mensagem inválida.");
+                    }
+                } else {
+                    for (int i = posicaoArray; i < mensagens.size(); i++) {
+                        System.out.print((i + 1) + ". ");
+                        System.out.print(mensagens.get(i));
+                        System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                        System.out.println();
+                    }
+
+                    System.out.print("\n\nQual mensagem deseja visualizar: ");
+                    msgEscolhida = in.nextLine();
+
+                    if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                        System.out.println("\n\nMensagem:");
+                        System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                    } else {
+                        System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                    }
+                }
+
+                if (mensagens.size() > 5 && !msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                    System.out.println("\n\nDeseja mudar de página? (Digite sim ou nao)\n");
+                    System.out.print("Confirma: ");
+                    mudarPagina = in.nextLine();
+
+                    while ((!mudarPagina.equals("sim")) && (!mudarPagina.equals("nao"))) {
+                        System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                        System.out.print("Confirma: ");
+                        mudarPagina = in.nextLine();
+                    }
+
+                    if (mudarPagina.equals("sim")) {
+                        mensagens.remove(0);
+                        mensagens.remove(0);
+                        mensagens.remove(0);
+                        mensagens.remove(0);
+                        mensagens.remove(0);
+
+                    }
+                }
+
+                while (!msgEscolhida.equals("0")) {
+                    System.out.println("\n\nMensagens:\n");
+                    if (mensagens.size() >= 5) {
+                        for (int i = posicaoArray; i <= posicaoArray + 4; i++) {
+                            System.out.print((i + 1) + ". ");
+                            System.out.print(mensagens.get(i));
+                            System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                            System.out.println();
+                        }
+
+                        System.out.print("\n\nQual mensagem deseja visualizar: ");
+                        msgEscolhida = in.nextLine();
+
+                        if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > 5)) {
+                            System.out.println("\n\nMensagem:");
+                            System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                        } else {
+                            System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                        }
+                    } else {
+                        for (int i = posicaoArray; i < mensagens.size(); i++) {
+                            System.out.print((i + 1) + ". ");
+                            System.out.print(mensagens.get(i));
+                            System.out.println("\nEnviado por: " + crudUsuario.read(mensagens.get(i).getIdUsuario()).getNome());
+                            System.out.println();
+                        }
+
+                        System.out.print("\n\nQual mensagem deseja visualizar: ");
+                        msgEscolhida = in.nextLine();
+
+                        if (!msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                            System.out.println("\n\nMensagem:");
+                            System.out.println(mensagens.get(Integer.parseInt(msgEscolhida) - 1).getMensagem());
+                        } else {
+                            System.out.println("\n\nNenhuma opção válida foi escolhida.");
+                        }
+                    }
+
+                    if (mensagens.size() > 5 && !msgEscolhida.equals("0") && !(Integer.parseInt(msgEscolhida) < 0) && !(Integer.parseInt(msgEscolhida) > mensagens.size())) {
+                        System.out.println("\n\nDeseja mudar de página? (Digite sim ou nao)\n");
+                        System.out.print("Confirma: ");
+                        mudarPagina = in.nextLine();
+
+                        while ((!mudarPagina.equals("sim")) && (!mudarPagina.equals("nao"))) {
+                            System.out.println("\nERRO: Confirmação inválida. Digite sim ou nao.");
+                            System.out.print("Confirma: ");
+                            mudarPagina = in.nextLine();
+                        }
+
+                        if (mudarPagina.equals("sim")) {
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+                            mensagens.remove(0);
+
+                        }
+                    }
+                }
+            }
+        }
+
+        pressToContinue();
+    }
+    
+    //Métodos auxiliares
+
+    /**
+     * Validação de email através de Regex
+     * @param email
+     * @return 
+     */
     private boolean isValidEmailAddressRegex(String email) {
         boolean isEmailIdValid = false;
         if (email != null && email.length() > 0) {
@@ -2183,7 +3188,26 @@ public class Interface {
         }
         return isEmailIdValid;
     }
-
+    
+    /**
+     * Embaralha vetor de inteiros
+     * @param array 
+     */
+    private void shuffleArray(int[] array) {
+        int index;
+        Random random = new Random();
+        for (int i = array.length - 1; i > 0; i--) {
+            index = random.nextInt(i + 1);
+            if (index != i) {
+                array[index] ^= array[i];
+                array[i] ^= array[index];
+                array[index] ^= array[i];
+            }
+        }
+    }
+   
+    //Métodos get e set e alguns auxiliares para simplificar a escrita de coisas
+    //na HUD
     public String getNomeAplicacao() {
         return nomeAplicacao;
     }
@@ -2223,5 +3247,12 @@ public class Interface {
     private void pressToContinue() {
         System.out.println("Pressione qualquer tecla para continuar...");
         in.nextLine();
+    }
+    //Conjunto de ENUMS que representam cada MENU que pode aparecer no programa
+    public enum Tela {
+        MENU_INICIAL, MENU_PRINCIPAL, MENU_SUGESTOES, MENU_GRUPOS, MENU_GERENCIAMENTODEGRUPOS,
+        MENU_GERENCIAMENTODEGRUPOS_GRUPOS, MENU_GERENCIAMENTODEGRUPOS_CONVITES, MENU_CONVITES,
+        MENU_GERENCIAMENTODEGRUPOS_PARTICIPANTES, MENU_GRUPOS_PARTICIPACAO_NOS_GRUPOS,
+        MENU_GRUPOS_ENVIO_LEITURA_MENSAGENS;
     }
 }

@@ -1,17 +1,12 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package amigooculto.entidades;
 
+//Importações
 import amigooculto.interfaces.Registro;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
@@ -20,13 +15,15 @@ import org.joda.time.format.DateTimeFormatter;
  * @author Jonathan
  */
 public class Convite implements Registro {
-
+    
+    //Atributos da classe
     private int idConvite;
     private int idGrupo;
     private String email;
     private long momentoConvite;
     private byte estado;
-
+    
+    //Construtor Padrão
     public Convite() {
         this.idConvite = -1;
         this.idGrupo = -1;
@@ -34,7 +31,8 @@ public class Convite implements Registro {
         this.momentoConvite = -1;
         this.estado = 0;
     }
-
+    
+    //Construtor inicializando alguns atributos
     public Convite(String email, long momentoConvite, byte estado) {
         this.idConvite = -1;
         this.idGrupo = -1;
@@ -42,7 +40,8 @@ public class Convite implements Registro {
         this.momentoConvite = momentoConvite;
         this.estado = estado;
     }
-
+    
+    //Getter e Setter
     public int getIdGrupo() {
         return idGrupo;
     }
@@ -89,7 +88,9 @@ public class Convite implements Registro {
     public String chaveSecundaria() {
         return this.idGrupo + "|" + this.email;
     }
-
+    
+    //Métodos herdados da interface Registro para auxiliar na escrita e leitura
+    //do registro
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();
@@ -115,36 +116,38 @@ public class Convite implements Registro {
         this.momentoConvite = entrada.readLong();
         this.estado = entrada.readByte();
     }
-
+    
+    //Retorna uma string com os dados do objeto
     @Override
     public String toString() {
-        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy hh:mm");
+        DateTimeFormatter formatter = DateTimeFormat.forPattern("dd/MM/yyyy HH:mm"); //formatação da data a ser apresentada
 
         String conviteString = this.email;
         conviteString += " (" + formatter.print(momentoConvite) + " - " + decodificarEstado() + ")";
 
         return conviteString;
     }
-
+    
+    //transforma o estado(valor inteiro) em uma String significante
     private String decodificarEstado() {
-        String estado;
+        String estadoConvite;
         switch (this.estado) {
             case 0:
-                estado = "pendente";
+                estadoConvite = "pendente";
                 break;
             case 1:
-                estado = "aceito";
+                estadoConvite = "aceito";
                 break;
             case 2:
-                estado = "recusado";
+                estadoConvite = "recusado";
                 break;
             case 3:
-                estado = "cancelado";
+                estadoConvite = "cancelado";
                 break;
             default:
-                estado = "Não identificado";
+                estadoConvite = "Não identificado";
                 break;
         }
-        return estado;
+        return estadoConvite;
     }
 }

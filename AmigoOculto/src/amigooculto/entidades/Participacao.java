@@ -1,5 +1,6 @@
 package amigooculto.entidades;
 
+//Importações
 import amigooculto.interfaces.Registro;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,19 +13,22 @@ import java.io.IOException;
  * @author Jonathan
  */
 public class Participacao implements Registro {
-
+    
+    //Atributos da classe
     private int idParticipacao;
     private int idUsuario;
     private int idGrupo;
     private int idAmigo;
-
+    
+    //Construtor padrão
     public Participacao() {
         this.idParticipacao = -1;
         this.idUsuario = -1;
         this.idGrupo = -1;
         this.idAmigo = -1;
     }
-
+    
+    //Getter e Setter
     public int getIdUsuario() {
         return idUsuario;
     }
@@ -63,7 +67,8 @@ public class Participacao implements Registro {
     public String chaveSecundaria() {
         return this.idUsuario + "|" + this.idGrupo;
     }
-
+    
+    //Métodos herdados da interface Registro
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();

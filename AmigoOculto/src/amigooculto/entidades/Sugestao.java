@@ -12,14 +12,16 @@ import java.io.IOException;
  * @author Jonathan
  */
 public class Sugestao implements Registro {
-
+    
+    //Atributos da classe
     private int idSugestao;
     private int idUsuario;
     String produto;
     String loja;
     float valor;
     String observacoes;
-
+    
+    //Construtor padrão
     public Sugestao() {
         this.idSugestao = -1;
         this.idUsuario = -1;
@@ -28,14 +30,17 @@ public class Sugestao implements Registro {
         this.valor = 0;
         this.observacoes = "";
     }
-
+    
+    //Construtor inicializando alguns atributos
     public Sugestao(String produto, String loja, float valor, String observacoes) {
         this.produto = produto;
         this.loja = loja;
         this.valor = valor;
         this.observacoes = observacoes;
     }
-
+    
+    //Getter e Setter
+    
     public String getProduto() {
         return produto;
     }
@@ -90,7 +95,9 @@ public class Sugestao implements Registro {
     public String chaveSecundaria() {
         return this.idUsuario + "|" + this.produto;
     }
-
+    
+    
+    //Métodos herdados da interface Registro
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();
@@ -118,7 +125,9 @@ public class Sugestao implements Registro {
         this.valor = entrada.readFloat();
         this.observacoes = entrada.readUTF();
     }
-
+    
+    
+    //traduz o objeto em uma String
     @Override
     public String toString() {
         String sugestaoString = "Produto: " + this.produto;

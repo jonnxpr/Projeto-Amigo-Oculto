@@ -1,5 +1,6 @@
 package amigooculto.entidades;
 
+//Importações
 import amigooculto.interfaces.Registro;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,14 +14,15 @@ import java.io.IOException;
  */
 public class Usuario implements Registro {
 
-    //Atributos
+    //Atributos da classe
     private int idUsuario;
     private String nome;
     private String apelido;
     private String email;
     private String senha;
     private String codigoDeRecuperacao;
-
+    
+    //Construtor padrão
     public Usuario() {
         this.idUsuario = -1;
         this.nome = "";
@@ -29,7 +31,8 @@ public class Usuario implements Registro {
         this.senha = "";
         this.codigoDeRecuperacao = "";
     }
-
+    
+    //Construtor inicializando alguns atributos
     public Usuario(String nome, String apelido, String email, String senha, String codigoDeResgate) {
         this.idUsuario = -1;
         this.nome = nome;
@@ -90,12 +93,12 @@ public class Usuario implements Registro {
         this.codigoDeRecuperacao = codigoDeRecuperacao;
     }
 
-    //Métodos auxiliares
     @Override
     public String chaveSecundaria() {
         return this.email;
     }
-
+    
+    //Métodos herdados da interface Registro
     @Override
     public byte[] toByteArray() throws IOException {
         ByteArrayOutputStream dados = new ByteArrayOutputStream();
@@ -123,7 +126,9 @@ public class Usuario implements Registro {
         this.senha = entrada.readUTF();
         this.codigoDeRecuperacao = entrada.readUTF();
     }
-
+    
+    
+    //traduz o objeto em uma String
     @Override
     public String toString() {
         String userString = "Nome: " + this.nome;

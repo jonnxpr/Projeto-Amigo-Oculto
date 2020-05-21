@@ -1,14 +1,13 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package amigooculto.interfaces;
 
+//Importações
 import java.io.IOException;
 
 /**
- *
+ * Interface Registro
+ * Contém métodos interessantes para a criação de objetos genêricos e que eventualmente
+ * facilitarão a escrita e leitura dos dados dos objetos no arquivo
  * @author Jonathan
  */
 public interface Registro {
